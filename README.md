@@ -3,7 +3,7 @@
 <p align="center">
   <b>Admissible, Not Repeatable: Isolating Approximate Similarity Reads in Shared Agent Memory</b><br>
   Code, experiments and paper sources of the PVLDB Vol. 20 paper<br>
-  <a href="ariadne-full-version.pdf">Full version with appendices (PDF)</a>
+  <a href="ariadne-full-version.pdf"><b>📄 Full version with all appendices (PDF), recommended for reviewers</b></a>
 </p>
 
 <p align="center">
@@ -25,6 +25,18 @@
 </p>
 
 ---
+
+> [!IMPORTANT]
+> **Dear Reviewers and readers: please read the [full version of the paper (PDF)](ariadne-full-version.pdf).**
+> The 12-page PVLDB paper refers to it throughout. It contains what the page limit leaves out:
+> - **Appendix A**: complete proofs and precise statements (operational reading of c-serializability, tightness of
+>   separation, safety for general transactions, characterization and conflict radius, the conflict law, estimation)
+> - **Appendix B**: the PostgreSQL analysis (SSI background, code path and fix, all soundness tests, GiST)
+> - **Appendix C**: the conflict law in detail
+> - **Appendix D**: every further experiment (race, correctness checks, cost and savings, performance, ablations and robustness)
+> - **Appendix E**: validation of the auditor
+> - **Appendix F**: reproducibility (machines, models, seeds, intervals)
+> - **Appendix G**: related work &nbsp;·&nbsp; **Appendix H**: notation and terms
 
 ## Overview
 
@@ -88,8 +100,9 @@ Evaluated on five text streams, seven stores and 20 baselines from five families
 | **Pessimistic locking** | on A64, strict and tolerant ball locks spend 811.1 and 291.2 extra calls per 100 tasks on deadlock victims, against 102.2 and 12.7 for certified validation |
 | **PostgreSQL** | the duplicate commit under SERIALIZABLE is reproduced deterministically and closed by an eight-line patch to pgvector |
 
-The full version ([PDF](ariadne-full-version.pdf)) contains the proofs, the PostgreSQL analysis, the conflict law in
-detail and every further experiment.
+> [!NOTE]
+> The [full version (PDF)](ariadne-full-version.pdf) contains the proofs, the PostgreSQL analysis, the conflict law
+> in detail and every further experiment behind these results.
 
 ## Repository layout
 
