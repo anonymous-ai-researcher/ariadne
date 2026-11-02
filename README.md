@@ -27,7 +27,7 @@
 ---
 
 > [!IMPORTANT]
-> **Dear Reviewers and readers: please read the [full version of the paper (PDF)](ariadne-full-version.pdf).**
+> **Dear reviewers and readers: please read the [full version of the paper (PDF)](ariadne-full-version.pdf).**
 > The 12-page PVLDB paper refers to it throughout. It contains what the page limit leaves out:
 > - **Appendix A**: complete proofs and precise statements (operational reading of c-serializability, tightness of
 >   separation, safety for general transactions, characterization and conflict radius, the conflict law, estimation)
