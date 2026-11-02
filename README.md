@@ -410,18 +410,6 @@ together with the sha256 of every embedding array the cell read, the package ver
   adapters for LangMem, Letta, Zep, A-MEM and MemoryOS would map.
 - **An experiment**: copy a YAML file in `experiments/`, then run `python experiments/_plan.py` to update the catalogue.
 
-## Citation
-
-```bibtex
-@article{lu2027ariadne,
-  author  = {Chang Lu and Yizheng Zhao},
-  title   = {Admissible, Not Repeatable: Isolating Approximate Similarity Reads in Shared Agent Memory},
-  journal = {Proceedings of the VLDB Endowment},
-  volume  = {20},
-  year    = {2027}
-}
-```
-
 ## License
 
 Released under the [MIT License](LICENSE). The data sets keep their own licenses; `paper/acmart.cls`, `paper/pvldb.sty`
