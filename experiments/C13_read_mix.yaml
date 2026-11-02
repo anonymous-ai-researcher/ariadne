@@ -1,0 +1,54 @@
+name: C13_read_mix
+doc: |
+  Question. Most agent traffic is retrieval.  How do read-only tasks change the picture, and do they need validation?
+  Setup. Share of read-only tasks from 0 to 95%.  A read-only task can be serialized at its read, so by default it skips validation;
+    the ablation validate_readonly makes it validate (what a system needs if the answer must be fresh at reply time).
+  Report. extra_calls_per_100, tps, latency, for writers and overall; staleness of read-only answers at reply time (rho at commit
+    position from the audit).
+base:
+  k: 10
+  tau_cos: 0.1
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+cases:
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+grid:
+  mix:
+  - _name: read0
+    workload.ops: {add: 1.0}
+  - _name: read50
+    workload.ops: {add: 0.5, read: 0.5}
+  - _name: read80
+    workload.ops: {add: 0.19999999999999996, read: 0.8}
+  - _name: read90
+    workload.ops: {add: 0.09999999999999998, read: 0.9}
+  - _name: read95
+    workload.ops: {add: 0.050000000000000044, read: 0.95}
+  proto:
+  - _name: exact
+    protocol: {kind: validate, policy: exact}
+  - _name: cadm1.1
+    protocol: {kind: validate, policy: 'cadm:1.1'}
+  - _name: cadm1.1-ro
+    protocol: {kind: validate, policy: 'cadm:1.1', validate_readonly: true}
+  - _name: none
+    protocol: {kind: validate, policy: none}
+repeat: 3
+audits: [run]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  grid:
+    mix:
+    - _name: read80
+      workload.ops: {add: 0.2, read: 0.8}
+    proto:
+    - _name: cadm1.1
+      protocol: {kind: validate, policy: 'cadm:1.1'}
+    - _name: cadm1.1-ro
+      protocol: {kind: validate, policy: 'cadm:1.1', validate_readonly: true}

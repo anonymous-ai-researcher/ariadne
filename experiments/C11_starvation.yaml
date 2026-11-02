@@ -1,0 +1,69 @@
+name: C11_starvation
+doc: |
+  Question. Can a task be starved by repeated invalidation?  Worst cases for an optimistic protocol: slow thinkers among fast ones
+    (heavy-tailed think time) and hot topics (many agents writing near the same point).
+  Setup. Pareto think times; fan-out with large fan (8, 16) and hot anchors; max_rounds 30 (cap) and 3 (bounded retries, then commit
+    anyway and count it).
+  Report. Distribution of rounds per task (rounds_p99, max_rounds_seen), capped, latency p99 and max; per-task rounds are in the logs
+    for a CCDF plot.  Expect: geometric tail; c-admissible validation shortens it.
+base:
+  k: 10
+  tau_cos: 0.15
+  store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'pareto:0.2,1.8'}
+  protocol: {kind: validate}
+cases:
+- _name: fan8-hot
+  workload:
+    kind: fanout
+    data: data/spacy__raw.npz
+    n_base: 10000
+    n_events: 300
+    conc: 64
+    think: 0.2
+    jitter: 1.0
+    fanout:
+    - [8, 1.0]
+    hot: 5
+- _name: fan16-hot
+  workload:
+    kind: fanout
+    data: data/spacy__raw.npz
+    n_base: 10000
+    n_events: 150
+    conc: 64
+    think: 0.2
+    jitter: 1.0
+    fanout:
+    - [16, 1.0]
+    hot: 3
+- _name: A256
+  tau_cos: 0.1
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 12000, teams: single, agents: 256}
+- _name: L8
+  tau_cos: 0.1
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 8}
+grid:
+  protocol.policy: [exact, 'cadm:1.05', 'cadm:1.2']
+  protocol.max_rounds: [3, 30]
+repeat: 3
+audits: [run]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'pareto:0.02,1.8'}
+  cases:
+  - _name: fan8-hot
+    workload:
+      kind: fanout
+      data: data/spacy__raw.npz
+      n_base: 3000
+      n_events: 30
+      conc: 32
+      think: 0.02
+      jitter: 1.0
+      fanout:
+      - [8, 1.0]
+      hot: 3
+  grid:
+    protocol.policy: [exact, 'cadm:1.2']
+    protocol.max_rounds: [30]

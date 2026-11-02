@@ -1,0 +1,85 @@
+name: A4_anomaly_taxonomy
+doc: |
+  Question. Which anomalies beyond duplicate insertion do unprotected similarity reads cause, and which validation removes which?
+  Setup. Mixed operations on a shared store: add (dedup-insert), upsert (replace the nearest memory if within tau), delete (remove the
+    nearest memory if within tau), read-only.  Anomalies counted by the auditor against a serial exact execution in commit order:
+    duplicate insertion, forked update (two tasks replace the same memory and both insert), update or delete of a memory that is no
+    longer the nearest, decision on an item that was deleted in the meantime (answers_with_items_not_in_state), stale read-only answers.
+  Protocols. none; objects (object-granularity validation: the items that were read still exist, which is what a version check on read
+    objects gives and what agent-level concurrency control on shared objects sees); cadm:1.1 with and without the existence check;
+    exact; lock held across the think step.
+  Report. serial audit: different_action_per_100, stored_only_in_run / stored_only_in_serial; run audit: divergence per proxy,
+    answers_with_items_not_in_state.  Expect: object-granularity validation misses every anomaly caused by an insertion (phantoms).
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+cases:
+- _name: A64mix
+  workload:
+    kind: stream
+    data: data/agnews__${EMB:-wordllama}.npz
+    base: 60000
+    stream: 6000
+    teams: single
+    agents: 64
+    ops: {add: 0.6, upsert: 0.2, delete: 0.1, read: 0.1}
+- _name: L4mix
+  workload:
+    kind: stream
+    data: data/locomo__${EMB:-wordllama}.npz
+    teams: group
+    agents: 4
+    ops: {add: 0.6, upsert: 0.2, delete: 0.1, read: 0.1}
+- _name: A64upsert
+  workload:
+    kind: stream
+    data: data/agnews__${EMB:-wordllama}.npz
+    base: 60000
+    stream: 6000
+    teams: single
+    agents: 64
+    ops: {upsert: 1.0}
+- _name: A64add
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+grid:
+  proto:
+  - _name: none
+    protocol: {kind: validate, policy: none}
+  - _name: raw
+    protocol: {kind: none}
+  - _name: objects
+    protocol: {kind: validate, policy: objects}
+  - _name: cadm1.1
+    protocol: {kind: validate, policy: 'cadm:1.1'}
+  - _name: cadm1.1-noexist
+    protocol: {kind: validate, policy: 'cadm:1.1', exist_check: false}
+  - _name: exact
+    protocol: {kind: validate, policy: exact}
+  - _name: lock-long
+    protocol: {kind: lock_long}
+repeat: 3
+audits: [run, sep, serial]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: A16mix
+    workload:
+      kind: stream
+      data: data/agnews__${EMB:-wordllama}.npz
+      base: 4000
+      stream: 300
+      teams: single
+      agents: 16
+      ops: {add: 0.6, upsert: 0.2, delete: 0.1, read: 0.1}
+  grid:
+    proto:
+    - _name: none
+      protocol: {kind: validate, policy: none}
+    - _name: objects
+      protocol: {kind: validate, policy: objects}
+    - _name: cadm1.1
+      protocol: {kind: validate, policy: 'cadm:1.1'}

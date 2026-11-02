@@ -1,0 +1,63 @@
+name: B1_safety_theorem
+doc: |
+  Question. Does every execution of Algorithm AV satisfy the safety theorem?  For each committed task the auditor rebuilds the exact
+    store state at its commit position and checks  rho(committed answer | state) <= c * rho(validation answer | state);  with an exact
+    validation read (cert:c) this is rho(committed) <= c, which is c-serializability in commit order.
+  Grid. c in {1, 1.02, 1.05, 1.1, 1.2, 1.5, 2}; approximate and exact validation; three search budgets (a weak index makes rho_F large and
+    the bound loose but still valid); pgvector and FAISS; insert-only, mixed operations, multi-read.
+  Report. safety_theorem.violations (must be 0 in every cell), rho_committed max and p99, answers_with_items_not_in_state (must be 0),
+    number of checked tasks.  Then run the fault-injection self-test (B5) on the same logs to show the check has teeth.
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate}
+cases:
+- _name: L8
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 8}
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+- _name: A64mix
+  workload:
+    kind: stream
+    data: data/agnews__${EMB:-wordllama}.npz
+    base: 60000
+    stream: 6000
+    teams: single
+    agents: 64
+    ops: {add: 0.6, upsert: 0.2, delete: 0.1, read: 0.1}
+- _name: A64multi
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64, extra_reads: 3}
+grid:
+  store:
+  - _name: pgvector
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  - _name: faiss
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  ef: [10, 40, 200]
+  protocol.policy: ['cadm:1.0', 'cadm:1.02', 'cadm:1.05', 'cadm:1.1', 'cadm:1.2', 'cadm:1.5', 'cadm:2.0', 'cert:1.0', 'cert:1.05', 'cert:1.1', 'cert:1.2',
+    'cert:1.5']
+repeat: 3
+audits: [run, sep]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  - _name: A16mix
+    workload:
+      kind: stream
+      data: data/agnews__${EMB:-wordllama}.npz
+      base: 4000
+      stream: 300
+      teams: single
+      agents: 16
+      ops: {add: 0.6, upsert: 0.2, delete: 0.1, read: 0.1}
+  grid:
+    store:
+    - _name: faiss
+      store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+    ef: [10, 40]
+    protocol.policy: ['cadm:1.1', 'cert:1.1', 'cert:1.0']

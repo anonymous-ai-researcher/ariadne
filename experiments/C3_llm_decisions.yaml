@@ -1,0 +1,42 @@
+name: C3_llm_decisions
+doc: |
+  Question. With a real model deciding ADD / UPDATE / DELETE / NOOP from the retrieved memories (the prompt of agent-memory systems):
+    how many calls does each predicate cost, how often does the committed decision differ from the decision the same model makes on
+    the exact answer, and what does it cost in tokens?
+  Setup. LoCoMo (and LongMemEval) streams, decider llm (OpenAI-compatible endpoint: OPENAI_BASE_URL, OPENAI_API_KEY, LLM_MODEL), think time
+    = real latency.  Policies none, exact, cadm:1.05 / 1.1 / 1.2, overlap:0.9.  After each run the replay audit asks the model again
+    on the fresh and on the exact answer for a sample of tasks (answers are cached, so repeats are free).  Three seeds per cell
+    (the schedule differs between seeds).  The cache is shared by all cells: a call answered from the cache sleeps the recorded
+    latency of the original call and counts its tokens (decider option replay_latency, default on), so a cell does not get
+    cheaper or faster because an earlier cell asked the same prompt.
+  Report. extra_calls_per_100, prompt and completion tokens (summary.decider), latency; replay: decision_changed_committed_vs_exact_%,
+    the index floor, by committed action.  The model is recorded in summary.decider.model; each model runs into its own
+    result directory (experiments/vldb/run_llm.sh writes results_vldb_gpt4omini/ and results_vldb_qwen7b/).
+  Cost note. Roughly tasks * (1 + redo rate) calls per run, about 2.5k to 4k calls per LoCoMo run plus 1.5k for the replay; most
+    calls of the second and third seed are answered from the cache (billed once, but they take the recorded time).
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: llm, model: '${LLM_MODEL:-gpt-4o-mini}', temperature: 0, think: none, cache: results/llm_cache.jsonl}
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  protocol: {kind: validate}
+cases:
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: L8
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 8}
+- _name: LME4
+  workload: {kind: stream, data: 'data/longmemeval__${EMB:-wordllama}.npz', base: 20000, stream: 6000, teams: group, agents: 4}
+grid:
+  protocol.policy: [none, exact, 'overlap:0.9', 'cadm:1.05', 'cadm:1.1', 'cadm:1.2']
+repeat: 3
+audits: [run, sep, replay]
+smoke:
+  base:
+    decider: {kind: llm, mock: true, think: 'fixed:0.02', cache: results/llm_cache_mock.jsonl}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: L4
+    workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4, stream: 200}
+  grid:
+    protocol.policy: [none, exact, 'cadm:1.1']

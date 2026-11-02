@@ -1,0 +1,59 @@
+name: C6_index_operating_points
+doc: |
+  Question. How does the quality of the index interact with the tolerance?  The guarantee of AV is c * rho_F: a weak index gives away
+    the contract by itself.  Three knobs: the search budget of reads, the budget of the validation read, and exact validation (certified).
+  Setup. HNSW (M in {8, 16, 32}; ef in {10, 20, 40, 100, 200, 400}) and IVFFlat (probes in {1, 5, 20, 50}); validation with the same budget,
+    a larger one (ef_val 400), or exact; policies exact, cadm:1.1, cert:1.1.
+  Report. recall_fresh and rho_fresh p99 (the index's own contract violations, rho_fresh ">c"), rho_committed ">c" (should equal the
+    index's own rate for cadm and be 0 for cert), extra_calls_per_100, cs_vread_mean_ms (price of exact validation), tps.
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate}
+cases:
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+grid:
+  index:
+  - _name: hnsw-M8
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 8, ef_construction: 64, ef_search: 40}
+  - _name: hnsw-M16
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  - _name: hnsw-M32
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 32, ef_construction: 200, ef_search: 40}
+  - _name: ivfflat
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: ivfflat, M: 16, ef_construction: 64, ef_search: 40, lists: 200}
+  budget:
+  - {_name: ef10, ef: 10, store.probes: 1}
+  - {_name: ef20, ef: 20, store.probes: 2}
+  - {_name: ef40, ef: 40, store.probes: 5}
+  - {_name: ef100, ef: 100, store.probes: 10}
+  - {_name: ef200, ef: 200, store.probes: 20}
+  - {_name: ef400, ef: 400, store.probes: 50}
+  val:
+  - {_name: same, protocol.policy: 'cadm:1.1'}
+  - {_name: ef400, protocol.policy: 'cadm:1.1', protocol.ef_val: 400}
+  - {_name: exact, protocol.policy: 'cert:1.1'}
+  - {_name: reexec, protocol.policy: exact}
+  - {_name: none, protocol.policy: none}
+repeat: 3
+audits: [run]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+  cases:
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  grid:
+    index:
+    - _name: hnsw-M16
+      store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+    budget:
+    - {_name: ef10, ef: 10}
+    - {_name: ef100, ef: 100}
+    val:
+    - {_name: same, protocol.policy: 'cadm:1.1'}
+    - {_name: exact, protocol.policy: 'cert:1.1'}

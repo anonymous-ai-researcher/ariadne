@@ -1,0 +1,73 @@
+name: A2_race_sensitivity
+doc: |
+  Question. Which workload parameters control the size of the race?  One factor at a time around the default point.
+  Factors. Arrival spread of the copies (jitter, in units of the think time), think time, fan-out distribution, duplicate threshold,
+    k, topic locality (hot anchors), size of the initial memory, target concurrency.
+  Report. dup_per_100_events against each factor.  Expect: the race disappears only when copies arrive much further apart than
+    one think time (jitter >> 1); everything else changes it little.
+base:
+  k: 10
+  tau_cos: 0.15
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 10000, n_events: 600, conc: 16, think: 0.2, jitter: 1.0}
+  protocol: {kind: none}
+cases:
+- {_name: jitter0.25, workload.jitter: 0.25}
+- {_name: jitter0.5, workload.jitter: 0.5}
+- {_name: jitter1, workload.jitter: 1}
+- {_name: jitter2, workload.jitter: 2}
+- {_name: jitter4, workload.jitter: 4}
+- {_name: jitter10, workload.jitter: 10}
+- {_name: jitter30, workload.jitter: 30}
+- {_name: jitter100, workload.jitter: 100}
+- {_name: think0.05, workload.think: 0.05, decider.think: 'lognormal:0.05,0.3'}
+- {_name: think0.2, workload.think: 0.2, decider.think: 'lognormal:0.2,0.3'}
+- {_name: think1.0, workload.think: 1.0, decider.think: 'lognormal:1.0,0.3'}
+- {_name: think5.0, workload.think: 5.0, decider.think: 'lognormal:5.0,0.3'}
+- _name: fan2
+  workload.fanout:
+  - [2, 1.0]
+- _name: fan4
+  workload.fanout:
+  - [4, 1.0]
+- _name: fan8
+  workload.fanout:
+  - [8, 1.0]
+- _name: fanmix
+  workload.fanout:
+  - [1, 0.5]
+  - [2, 0.3]
+  - [4, 0.2]
+- {_name: tau0.05, tau_cos: 0.05}
+- {_name: tau0.1, tau_cos: 0.1}
+- {_name: tau0.15, tau_cos: 0.15}
+- {_name: tau0.2, tau_cos: 0.2}
+- {_name: k1, k: 1}
+- {_name: k5, k: 5}
+- {_name: k10, k: 10}
+- {_name: k50, k: 50}
+- {_name: hot0, workload.hot: 0}
+- {_name: hot5, workload.hot: 5}
+- {_name: hot20, workload.hot: 20}
+- {_name: base2000, workload.n_base: 2000}
+- {_name: base10000, workload.n_base: 10000}
+- {_name: base18000, workload.n_base: 18000}
+- {_name: conc2, workload.conc: 2}
+- {_name: conc4, workload.conc: 4}
+- {_name: conc8, workload.conc: 8}
+- {_name: conc16, workload.conc: 16}
+- {_name: conc32, workload.conc: 32}
+- {_name: conc64, workload.conc: 64}
+repeat: 3
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 3000, n_events: 60, conc: 8, think: 0.02, jitter: 1.0}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - {_name: jitter1, workload.jitter: 1}
+  - {_name: jitter100, workload.jitter: 100}
+  - _name: fan4
+    workload.fanout:
+    - [4, 1.0]

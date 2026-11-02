@@ -1,0 +1,45 @@
+name: C9_scalability
+doc: |
+  Question. Does the picture change with the size of the memory, the length of the run and the number of agents?
+  Setup. Initial memory from 10^4 to 10^6 items (AG News up to 10^5, MS MARCO passages for 10^6), streams of 6k and 50k tasks, agents up
+    to 512.  The conflict rate per read should fall with store size for background writes (k / N) but not for sibling writes.
+  Report. extra_calls_per_100 per policy, cs_mean_ms and cs_vread_mean_ms (validation read time grows with the index), tps,
+    lock_held_fraction.
+base:
+  k: 10
+  tau_cos: 0.1
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate}
+cases:
+- _name: ag-10000
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 10000, stream: 6000, teams: single, agents: 64}
+- _name: ag-30000
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 30000, stream: 6000, teams: single, agents: 64}
+- _name: ag-100000
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 100000, stream: 6000, teams: single, agents: 64}
+- _name: msm-100000
+  workload: {kind: stream, data: 'data/msmarco__${EMB:-wordllama}.npz', base: 100000, stream: 6000, teams: single, agents: 64}
+- _name: msm-300000
+  workload: {kind: stream, data: 'data/msmarco__${EMB:-wordllama}.npz', base: 300000, stream: 6000, teams: single, agents: 64}
+- _name: msm-1000000
+  workload: {kind: stream, data: 'data/msmarco__${EMB:-wordllama}.npz', base: 1000000, stream: 6000, teams: single, agents: 64}
+- _name: ag-long
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 50000, teams: single, agents: 64}
+- _name: ag-512
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 20000, teams: single, agents: 512}
+grid:
+  protocol.policy: [none, exact, 'cadm:1.1']
+repeat: 3
+audits: [run]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: ag-2000
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 2000, stream: 300, teams: single, agents: 16}
+  - _name: ag-8000
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 8000, stream: 300, teams: single, agents: 16}
+  grid:
+    protocol.policy: [exact, 'cadm:1.1']

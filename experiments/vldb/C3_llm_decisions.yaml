@@ -1,0 +1,37 @@
+name: C3_llm_decisions
+doc: |
+  A real language model decides.  Same experiment as experiments/C3_llm_decisions.yaml with five seeds and a
+  per-model cache.  Run once per model into its own results directory:
+    GPT-4o mini (OpenAI):        LLM_MODEL=gpt-4o-mini-2024-07-18  (OPENAI_BASE_URL unset)          --out results_vldb_gpt4omini
+    Qwen2.5-7B-Instruct (vLLM):  LLM_MODEL=Qwen/Qwen2.5-7B-Instruct OPENAI_BASE_URL=http://<gpu>:8000/v1 OPENAI_API_KEY=EMPTY
+                                                                                                    --out results_vldb_qwen7b
+  The cache path follows the results directory (LLM_CACHE), so the two models never share answers.  Temperature 0, at most
+  200 completion tokens (the decider's default), the prompt of ariadne/deciders.py unchanged.
+  Report and paper: Table 5 (both models), Section 6.4.
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: llm, model: '${LLM_MODEL:-gpt-4o-mini-2024-07-18}', temperature: 0, max_tokens: 200, think: none,
+            cache: '${LLM_CACHE:-results/llm_cache.jsonl}', replay_latency: true}
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  protocol: {kind: validate}
+cases:
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: L8
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 8}
+- _name: LME4
+  workload: {kind: stream, data: 'data/longmemeval__${EMB:-wordllama}.npz', base: 20000, stream: 6000, teams: group, agents: 4}
+grid:
+  protocol.policy: [none, exact, 'overlap:0.9', 'cadm:1.05', 'cadm:1.1', 'cadm:1.2']
+repeat: 5
+audits: [run, sep, replay]
+smoke:
+  base:
+    decider: {kind: llm, mock: true, think: 'fixed:0.02', cache: results/llm_cache_mock.jsonl}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: L4
+    workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4, stream: 200}
+  grid:
+    protocol.policy: [none, exact, 'cadm:1.1']

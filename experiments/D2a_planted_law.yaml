@@ -1,0 +1,41 @@
+name: D2a_planted_law
+doc: |
+  Question. Does the estimation pipeline recover a law that was planted?  Synthetic streams: background items exchangeable with the
+    stored points, siblings at chord distance R * U^(1/D_s) from a parent a few positions earlier.
+  Grid. D_s in {1, 2, 3, 4, 6, 8, 12}, sibling share in {0, 0.1, 0.3, 0.6}, manifold dimension in {8, 16, 32}, k in {10, 50}; five workload
+    seeds each (vary_workload) because one seed is one draw of the sibling distances.  Every task inserts (tau_cos 0), so that the
+    controls are exact.
+  Report. law audit per run, then `python -m ariadne.law planted` (see D2b_planted_analysis): fitted D_s with interval against the planted
+    value, KS of ln(r_k / t) against Exp(D_s), in-ball background rate against n_c k / (N + 1), rank distribution of background
+    insertions (must be uniform), prediction error of the single-insertion conflict probability.
+  Replicates. Cells that differ only in pi or D_s at the same workload seed share their base and background vectors, so they are not
+    independent draws of the background; only distinct seeds are (`law bgrank` groups files by vectors for this reason).
+  Status at smoke scale. One seed gave a rank-1 excess among background insertions (13 of 52) and a D_s about 10% low; four further
+    workloads gave a deficit instead, and redrawing the vectors 40 times under the same timing gave 9.7% and 10.7% at rank 1 (uniform:
+    10%).  So there is no evidence of a systematic effect, but the per-seed scatter is 4 to 5 points at 50 to 70 background events:
+    about 1500 distinct background events (25 seeds at smoke scale, fewer at full scale) are needed to pin it to +-1.5 points.
+vary_workload: true
+base:
+  k: 10
+  tau_cos: 0.0
+  store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate, policy: none}
+  workload: {kind: synthetic, dim: 64, D: 16, n_base: 100000, n_stream: 20000, pi: 0.3, Ds: 4, lag_p: 0.3, agents: 64}
+grid:
+  workload.Ds: [1, 2, 3, 4, 6, 8, 12]
+  workload.pi: [0.0, 0.1, 0.3, 0.6]
+  workload.D: [8, 16, 32]
+  k: [10, 50]
+repeat: 5
+audits: [law]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    workload: {kind: synthetic, dim: 32, D: 12, n_base: 8000, n_stream: 2000, pi: 0.4, Ds: 3, lag_p: 0.3, agents: 32}
+  grid:
+    workload.Ds: [3, 6]
+    workload.pi: [0.0, 0.4]
+    workload.D: [12]
+    k: [10]
+  repeat: 2

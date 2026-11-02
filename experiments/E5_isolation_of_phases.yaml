@@ -1,0 +1,31 @@
+name: E5_isolation_of_phases
+doc: |
+  Question. PostgreSQL only: which isolation level should the read phase and the critical section use?
+  Variants. read phase at READ COMMITTED or REPEATABLE READ (irrelevant for a single statement, shown for completeness); critical
+    section at READ COMMITTED (correct) or REPEATABLE READ (the snapshot is taken before the advisory lock is granted, so the
+    validation read misses the writes it waited for: unsound).
+  Report. safety_theorem.violations, dup_written_per_100, extra_calls_per_100.
+base:
+  k: 10
+  tau_cos: 0.1
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate, policy: 'cadm:1.1'}
+cases:
+- _name: fan
+  tau_cos: 0.15
+  workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 10000, n_events: 600, conc: 32, think: 0.2, jitter: 1.0}
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+grid:
+  protocol.read_isolation: [READ COMMITTED, REPEATABLE READ]
+  protocol.cs_isolation: [READ COMMITTED, REPEATABLE READ]
+repeat: 3
+audits: [run, sep]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+  cases:
+  - _name: fan
+    tau_cos: 0.15
+    workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 3000, n_events: 60, conc: 8, think: 0.02, jitter: 1.0}

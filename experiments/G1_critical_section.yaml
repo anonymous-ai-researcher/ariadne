@@ -1,0 +1,34 @@
+name: G1_critical_section
+doc: |
+  Question. Where does the time inside the critical section go?  Lock wait, validation read, predicate test, write.
+  Setup. k from 1 to 100, search budget from 10 to 400, exact validation; agents 16 (little contention) and 128.
+  Report. cs_vread_mean_ms, cs_predicate_mean_ms, cs_write_mean_ms, cs_mean_ms, lock_wait_mean_ms.  Expect: the predicate is
+    microseconds; the validation read dominates; the write (HNSW insertion) is comparable.
+base:
+  tau_cos: 0.1
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate, policy: 'cadm:1.1'}
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 16}
+grid:
+  workload.agents: [16, 128]
+  kb:
+  - {_name: k1-ef40, k: 1, ef: 40}
+  - {_name: k10-ef10, k: 10, ef: 10}
+  - {_name: k10-ef40, k: 10, ef: 40}
+  - {_name: k10-ef100, k: 10, ef: 100}
+  - {_name: k10-ef400, k: 10, ef: 400}
+  - {_name: k50-ef100, k: 50, ef: 100}
+  - {_name: k100-ef200, k: 100, ef: 200}
+  - {_name: k100-ef400, k: 100, ef: 400}
+  - {_name: k10-exact, k: 10, ef: 40, protocol.validation: exact}
+repeat: 3
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  grid:
+    workload.agents: [16]
+    kb:
+    - {_name: k10-ef40, k: 10, ef: 40}
+    - {_name: k10-exact, k: 10, ef: 40, protocol.validation: exact}

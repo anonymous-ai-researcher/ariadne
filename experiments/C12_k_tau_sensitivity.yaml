@@ -1,0 +1,45 @@
+name: C12_k_tau_sensitivity
+doc: |
+  Question. Sensitivity of the savings to the retrieval depth k and to the duplicate threshold tau.
+  Report. extra_calls_per_100 per policy against k (1 to 100) and against tau; divergence per proxy.  Expect: larger k means more
+    in-ball writes (more re-execution under exact) but a smaller share of them breaks admissibility; tau only moves the dup proxy.
+base:
+  k: 10
+  tau_cos: 0.1
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate}
+cases:
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+grid:
+  kt:
+  - {_name: k1, k: 1, ef: 40}
+  - {_name: k3, k: 3, ef: 40}
+  - {_name: k5, k: 5, ef: 40}
+  - {_name: k10, k: 10, ef: 40}
+  - {_name: k20, k: 20, ef: 40}
+  - {_name: k50, k: 50, ef: 100}
+  - {_name: k100, k: 100, ef: 200}
+  - {_name: tau0.05, tau_cos: 0.05}
+  - {_name: tau0.1, tau_cos: 0.1}
+  - {_name: tau0.15, tau_cos: 0.15}
+  - {_name: tau0.2, tau_cos: 0.2}
+  - {_name: tau0.3, tau_cos: 0.3}
+  protocol.policy: [none, exact, 'overlap:0.9', 'cadm:1.05', 'cadm:1.1', 'cadm:1.2']
+repeat: 3
+audits: [run]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  grid:
+    kt:
+    - {_name: k3, k: 3}
+    - {_name: k20, k: 20, ef: 40}
+    protocol.policy: [exact, 'cadm:1.1']

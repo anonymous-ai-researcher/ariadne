@@ -1,0 +1,31 @@
+name: D6_embedders_and_k
+doc: |
+  Question. Are the sibling parameters properties of the text stream or of the embedding model?  The same streams embedded with
+    several models (set EMB before preparing the data and before running; one results directory per model via --out), and k from 5 to 100.
+  Run. The main embedder into results/ (as every other experiment); each additional one into its own directory, never the main one
+       twice (fig_t_16 reads results/ and every results_<tag>/):
+         for EMB in st-BAAI_bge-small-en-v1.5 st-sentence-transformers_all-MiniLM-L6-v2 openai-text-embedding-3-small:   # not the main one
+           EMB=$EMB python experiments/run.py experiments/D6_embedders_and_k.yaml --set tau_cos=<value for $EMB> --out results_$EMB
+  Report. D_s, sibling share, lag kernel, conflict probability per model and per k; whether the lag kernel's shape is shared.
+base:
+  tau_cos: 0.1
+  store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate, policy: none}
+cases:
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+grid:
+  k: [5, 10, 20, 50, 100]
+repeat: 3
+audits: [law]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+  cases:
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  grid:
+    k: [5, 20]

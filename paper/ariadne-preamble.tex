@@ -1,0 +1,79 @@
+%% Shared preamble of the main paper and the appendix.
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{colortbl}
+%% Table highlighting: ours (blue, the colour of c = 1.1 in the figures), reference (grey), failure or cost (red).
+\definecolor{hlours}{HTML}{DCEBF7}
+\definecolor{hlref}{HTML}{ECECEC}
+\definecolor{hlbad}{HTML}{F9DEDC}
+\newcommand{\hb}{\cellcolor{hlbad}}
+%% Lists: labels flush with the paragraph left edge, no indentation.
+\setlist[itemize,enumerate]{leftmargin=*,labelindent=0pt,itemindent=0pt,listparindent=0pt,topsep=2pt,partopsep=0pt}
+\setlist[description]{leftmargin=0pt,labelindent=0pt,itemindent=0pt}
+\graphicspath{{figures/}}
+
+\newcommand{\sys}{\textsc{Ariadne}}
+\newcommand{\Adm}{\mathrm{Adm}}
+\newcommand{\cser}{$c$-serializable}
+\newcommand{\dist}{d}
+\newcommand{\Ds}{D_{\mathrm{s}}}
+\newcommand{\rhoa}{\rho}
+\newcommand{\Rc}{R_c}
+\newcommand{\Read}{\textsc{Read}}
+\newcommand{\pol}[1]{\textsf{#1}}
+\algrenewcommand\algorithmicindent{0.9em}
+\emergencystretch=1.5em
+
+%% ---------------------------------------------------------------------
+%% Results bridge.  Every measured number in the text is \res[shape]{key}
+%% (or \ra, \rb, \ri, \rarng).  paper/make_results.py computes the keys
+%% from the result files and writes results.tex (\resdef{key}{value}).
+%% A key without a value prints its shape in orange in a draft; with
+%% \resultsfinaltrue it is a compile error, so no missing number can
+%% survive into a final build.
+%% ---------------------------------------------------------------------
+\newif\ifresultsfinal
+\resultsfinalfalse
+\newwrite\reskeys
+\immediate\openout\reskeys=\jobname.reskeys
+\newcommand{\resdef}[2]{\expandafter\gdef\csname res/#1\endcsname{#2}}
+\DeclareRobustCommand{\res}[2][XX]{%
+  \immediate\write\reskeys{#2}%
+  \ifcsname res/#2\endcsname\csname res/#2\endcsname\else
+    \ifresultsfinal\PackageError{ariadne}{No result for key #2}{Run paper/make_results.py on the results.}\fi
+    {\color{orange}#1}%
+  \fi}
+%% A value computed from smoke-scale results (make_results.py --suffix _smoke): orange in a draft, an error in a final build.
+\newcommand{\resprov}[1]{\ifresultsfinal\PackageError{ariadne}{Smoke-scale value in a final build}{Run paper/make_results.py on the full results.}\fi{\color{orange}#1}}
+\newcommand{\ra}[1]{\res[00.0]{#1}}   % one decimal
+\newcommand{\rb}[1]{\res[0.00]{#1}}   % two decimals
+\newcommand{\ri}[1]{\res[00]{#1}}     % integer
+%% A range of two keys at one decimal; prints one value when both round to the same printed number.
+\newcommand{\rarng}[2]{\immediate\write\reskeys{#2}%
+  \ifcsname res/#1\endcsname\ifcsname res/#2\endcsname
+    \expandafter\let\expandafter\rarngA\csname res/#1\endcsname\expandafter\let\expandafter\rarngB\csname res/#2\endcsname
+    \ifx\rarngA\rarngB\ra{#1}\else\ra{#1} to \ra{#2}\fi
+  \else\ra{#1} to \ra{#2}\fi\else\ra{#1} to \ra{#2}\fi}
+%% Figures are drawn from the results by ariadne.plots (paper/build.sh).  A figure that is not there yet is a framed
+%% note in a draft and an error in a final build.
+\newcommand{\figstatus}[1]{}
+\newcommand{\datafig}[2][\columnwidth]{\IfFileExists{figures/#2.pdf}{\includegraphics[width=#1]{#2}}%
+  {\ifresultsfinal\PackageError{ariadne}{Missing figure #2}{Run paper/build.sh on the results.}\fi
+   \fbox{\parbox[c][0.45#1][c]{\dimexpr#1-2\fboxsep-2\fboxrule}{\centering\color{orange}\sffamily\small figure \texttt{\detokenize{#2}}: pending}}}}
+\InputIfFileExists{results.tex}{}{}
+
+%% The appendix is the full version of the paper (a separate technical report, in the artifact repository).
+%% In the 12-page paper the appendix sections are cited as sections of the full version.
+\newcommand{\appProofs}{the full version~\cite[App.~A]{ariadnefull}}
+\newcommand{\appPG}{the full version~\cite[App.~B]{ariadnefull}}
+\newcommand{\appLaw}{the full version~\cite[App.~C]{ariadnefull}}
+\newcommand{\appExp}{the full version~\cite[App.~D]{ariadnefull}}
+\newcommand{\appAudit}{the full version~\cite[App.~E]{ariadnefull}}
+\newcommand{\appRepro}{the full version~\cite[App.~F]{ariadnefull}}
+\newcommand{\appRelated}{the full version~\cite[App.~G]{ariadnefull}}
+\newcommand{\AppProofs}{The full version~\cite[App.~A]{ariadnefull}}
+\newcommand{\AppExp}{The full version~\cite[App.~D]{ariadnefull}}

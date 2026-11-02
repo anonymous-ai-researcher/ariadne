@@ -1,0 +1,66 @@
+name: D3a_law_real
+doc: |
+  Question. What do concurrent writes look like around a read on real text streams, and does the sibling-plus-background law predict
+    the conflict probability?
+  Setup. Instrumented runs (no isolation, everything logged) on every data set, at several concurrency levels and k; FAISS in process
+    is enough because the law is computed exact-to-exact from the logs (the store plays no role).
+  Report (after D3b_law_analysis). Per configuration: background share from first principles, sibling dimension(s) with intervals,
+    goodness of fit (KS with parametric bootstrap; expect formal rejection at large n and say so), rank distribution predicted but not
+    fitted, conflict probability at each c observed vs exchangeable-only vs closed form vs semi-parametric with one and two sibling
+    scales, end-to-end simulation for all reads, tail exponents, sensitivity to the intrinsic-dimension estimator.
+base:
+  k: 10
+  tau_cos: 0.1
+  store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate, policy: none}
+cases:
+- _name: L2
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 2}
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: L8
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 8}
+- _name: A16
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 16}
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+- _name: A64k50
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+  k: 50
+  ef: 100
+- _name: LME4
+  workload: {kind: stream, data: 'data/longmemeval__${EMB:-wordllama}.npz', base: 20000, stream: 6000, teams: group, agents: 4}
+- _name: QQP64
+  workload: {kind: stream, data: 'data/qqp__${EMB:-wordllama}.npz', base: 100000, stream: 6000, teams: single, agents: 64}
+- _name: MSM64
+  workload: {kind: stream, data: 'data/msmarco__${EMB:-wordllama}.npz', base: 1000000, stream: 6000, teams: single, agents: 64}
+- _name: L4k50
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+  k: 50
+  ef: 100
+- _name: A256
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 12000, teams: single, agents: 256}
+- _name: A64-long
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 30000, teams: single, agents: 64}
+repeat: 5   # five seeds, as stated in the paper for the conflict-law runs on real streams
+audits: [law, first]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+  cases:
+  - _name: L2
+    workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 2, stream: 1200}
+  - _name: L4
+    workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4, stream: 1200}
+  - _name: L8
+    workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 8, stream: 1200}
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 8000, stream: 1500, teams: single, agents: 16}
+  - _name: A64
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 8000, stream: 1500, teams: single, agents: 64}
+  - _name: A64k50
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 8000, stream: 1500, teams: single, agents: 64}
+    k: 50
+    ef: 100
+  repeat: 1

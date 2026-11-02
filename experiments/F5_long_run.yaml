@@ -1,0 +1,33 @@
+name: F5_long_run
+doc: |
+  Question. Is behaviour stable over a long run (store grows, index ages, siblings accumulate)?
+  Setup. Streams of 50k (AG News) tasks and the full MS MARCO stream; statistics in windows of 5k tasks are computed from the per-task
+    logs (rounds, latency, validation outcome): see ariadne/plots (time series figure).
+  Report. extra_calls_per_100, cs_vread_mean_ms and conflict probability per window; drift between the first and the last window.
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  protocol: {kind: validate}
+cases:
+- _name: ag-50k
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 50000, teams: single, agents: 64}
+- _name: msm-100k
+  workload: {kind: stream, data: 'data/msmarco__${EMB:-wordllama}.npz', base: 500000, stream: 100000, teams: single, agents: 64}
+grid:
+  protocol.policy: [none, exact, 'cadm:1.1']
+repeat: 1
+audits:
+- run
+- name: law
+  only: {protocol.policy: none}
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: ag-1k
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 1000, teams: single, agents: 16}
+  grid:
+    protocol.policy: ['cadm:1.1']

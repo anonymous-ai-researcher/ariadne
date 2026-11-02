@@ -1,0 +1,22 @@
+name: C4_downstream_qa
+kind: script
+doc: |
+  Question. Does the memory built under approximate-tolerant validation answer benchmark questions as well as the memory built with
+    exact validation or serially?  For every run of C3 (or C1) on LoCoMo the final memory is rebuilt from the log, questions are
+    answered from the top-k retrieved memories by a model and scored (token F1, exact match, optional model judge), with a paired
+    comparison against the first run.
+  Report. F1 / EM / judge accuracy overall and per category, paired difference with a bootstrap interval, near-duplicate pairs among
+    the retrieved memories.  Expect: no measurable difference between exact and cadm; `none` retrieves duplicated memories.
+  Run. Needs LOCOMO_RAW (path of locomo10.json) and a model endpoint; add --mock for a pipeline check.  The first run listed is the
+    reference of the paired comparison: list the exact-validation run first.  All six L4 runs of C3 are evaluated (the table of the
+    paper has one row per predicate).  Lines are appended to qa.jsonl; when a run appears twice the last line is used.
+commands: ['{py} -m ariadne.qa --runs {results}/C3_llm_decisions{smoke}/L4_exact_s1.pkl {results}/C3_llm_decisions{smoke}/L4_none_s1.pkl {results}/C3_llm_decisions{smoke}/L4_overlap-0.9_s1.pkl
+    {results}/C3_llm_decisions{smoke}/L4_cadm-1.05_s1.pkl {results}/C3_llm_decisions{smoke}/L4_cadm-1.1_s1.pkl {results}/C3_llm_decisions{smoke}/L4_cadm-1.2_s1.pkl
+    --dataset locomo --raw ${LOCOMO_RAW:-data/raw/locomo10.json} --embedder ${EMB_SPEC:-wordllama} --model ${LLM_MODEL:-gpt-4o-mini} --k 10 --judge --compare
+    --workers 8 --out {out}/qa.jsonl {extra}']
+vars: {extra: ''}
+smoke:
+  vars: {extra: --mock --limit 100}
+  commands: ['{py} -m ariadne.qa --runs {results}/C3_llm_decisions{smoke}/L4_exact_s1.pkl {results}/C3_llm_decisions{smoke}/L4_none_s1.pkl {results}/C3_llm_decisions{smoke}/L4_cadm-1.1_s1.pkl
+      --dataset locomo --raw ${LOCOMO_RAW:-data/raw/locomo10.json} --embedder ${EMB_SPEC:-wordllama} --model ${LLM_MODEL:-gpt-4o-mini} --k 10 --judge --compare
+      --workers 8 --out {out}/qa.jsonl {extra}']

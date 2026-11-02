@@ -1,0 +1,12 @@
+name: A7_gist_missed_conflict
+kind: script
+doc: |
+  Question. Do access methods that do implement predicate locking protect similarity-style searches?  Built-in GiST: a search that is
+    pruned at an internal page leaves no lock on the region a later insertion extends (locks move only on page split).
+  Report. Missed conflicts out of N per cell: equality and range searches outside all bounding boxes, inside the data region, k-NN
+    ordering, with B-tree and SP-GiST controls.
+  Scope. PostgreSQL 16.15 only (see A10).
+commands: ['{py} -m ariadne.pgtests.gist --trials {trials} --out {out}/gist.jsonl']
+vars: {trials: 40}
+smoke:
+  commands: ['{py} -m ariadne.pgtests.gist --smoke --out {out}/gist.jsonl']

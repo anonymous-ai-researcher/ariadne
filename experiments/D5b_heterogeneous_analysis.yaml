@@ -1,0 +1,9 @@
+name: D5b_heterogeneous_analysis
+kind: script
+doc: |
+  Analysis half of D5: fits and the stratification by local intrinsic dimension.
+commands: ['{py} -m ariadne.law fit {results}/D5_heterogeneous_dimension{smoke}/*.law.pkl --boot {boot} --out {results}/D5_heterogeneous_dimension{smoke}/fits.json',
+  '{py} -m ariadne.law strata {results}/D5_heterogeneous_dimension{smoke}/*.law.pkl --by lid --out {results}/D5_heterogeneous_dimension{smoke}/strata_lid.json']
+vars: {boot: 100}
+smoke:
+  vars: {boot: 10}

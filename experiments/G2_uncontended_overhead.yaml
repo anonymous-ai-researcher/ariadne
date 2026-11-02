@@ -1,0 +1,38 @@
+name: G2_uncontended_overhead
+doc: |
+  Question. What does validation cost when there is no contention at all?  One agent: latency of none vs AV (one extra search and one
+    lock round trip per task).
+  Report. lat_mean_s minus think_mean_s per protocol; cs_mean_ms.
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'fixed:0.05'}
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 2000, teams: single, agents: 1}
+grid:
+  store:
+  - _name: pgvector
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  - _name: faiss
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  proto:
+  - _name: none
+    protocol: {kind: none}
+  - _name: exact
+    protocol: {kind: validate, policy: exact}
+  - _name: cadm1.1
+    protocol: {kind: validate, policy: 'cadm:1.1'}
+  - _name: cert1.1
+    protocol: {kind: validate, policy: 'cert:1.1'}
+  - _name: ball
+    protocol: {kind: ball, c: 1.1}
+  - _name: lock-long
+    protocol: {kind: lock_long}
+repeat: 3
+smoke:
+  base:
+    decider: {kind: threshold, think: 'fixed:0.005'}
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 200, teams: single, agents: 1}
+  grid:
+    store:
+    - _name: faiss
+      store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}

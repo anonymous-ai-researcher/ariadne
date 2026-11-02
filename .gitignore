@@ -1,0 +1,34 @@
+# data and results are not part of the repository
+data/
+results*/
+work/
+logs/
+figures/
+*.pkl
+*.npz
+
+# generated paper files
+paper/figures/
+paper/tables/
+paper/results*.tex
+paper/results_report.md
+paper/figures.log
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.reskeys
+paper/*.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# editors and OS
+.idea/
+.vscode/
+.DS_Store

@@ -1,0 +1,38 @@
+name: D3b_law_analysis
+kind: script
+doc: |
+  Analysis half of D3: fits, lag kernel, transfers without refitting, stratified checks, and the kernel estimated from the static stream.
+  Strata. By local intrinsic dimension, ball radius, time, team and number of in-ball insertions: does one sibling dimension per
+    workload suffice, does the closed form survive heterogeneous dimension, does the end-to-end simulation hold for reads with
+    several in-ball insertions?
+  Transfers. window (another concurrency level, sibling rate scaled by overlapping commits), k (10 to 50, ball growth), lag (lag kernel
+    from one concurrency level applied to another), time (first half to second half), params (another corpus: expected to fail, it
+    shows the parameters are properties of the workload).  static_kernel predicts a run from the data alone plus the run's overlap
+    counts: no execution is used to estimate the kernel.
+  Seeds. fit, lag and strata read the law files of all seeds (one entry per run; the paper and the figures average the runs of a
+    configuration); the transfers and the static kernel use seed 1 of the source and of the target.
+  Report. Max absolute error of the conflict prediction per transfer; in-ball insertions per read predicted vs observed.
+commands: ['{py} -m ariadne.law fit {results}/D3a_law_real{smoke}/*.law.pkl --boot {boot} --out {out}/fits.json', '{py} -m ariadne.law lag {results}/D3a_law_real{smoke}/*.law.pkl
+    --out {out}/lag.json', '{py} -m ariadne.law transfer --src {results}/D3a_law_real{smoke}/L8_s1.law.pkl --dst {results}/D3a_law_real{smoke}/L4_s1.law.pkl
+    --mode lag --out {out}/transfer_lag_L8_L4.json', '{py} -m ariadne.law transfer --src {results}/D3a_law_real{smoke}/L8_s1.law.pkl --dst {results}/D3a_law_real{smoke}/L2_s1.law.pkl
+    --mode lag --out {out}/transfer_lag_L8_L2.json', '{py} -m ariadne.law transfer --src {results}/D3a_law_real{smoke}/L2_s1.law.pkl --dst {results}/D3a_law_real{smoke}/L8_s1.law.pkl
+    --mode lag --out {out}/transfer_lag_L2_L8.json', '{py} -m ariadne.law transfer --src {results}/D3a_law_real{smoke}/A64_s1.law.pkl --dst {results}/D3a_law_real{smoke}/A16_s1.law.pkl
+    --mode lag --out {out}/transfer_lag_A64_A16.json', '{py} -m ariadne.law transfer --src {results}/D3a_law_real{smoke}/A16_s1.law.pkl --dst {results}/D3a_law_real{smoke}/A64_s1.law.pkl
+    --mode lag --out {out}/transfer_lag_A16_A64.json', '{py} -m ariadne.law transfer --src {results}/D3a_law_real{smoke}/L4_s1.law.pkl --dst {results}/D3a_law_real{smoke}/L8_s1.law.pkl
+    --mode window --out {out}/transfer_window_L4_L8.json', '{py} -m ariadne.law transfer --src {results}/D3a_law_real{smoke}/A16_s1.law.pkl --dst {results}/D3a_law_real{smoke}/A64_s1.law.pkl
+    --mode window --out {out}/transfer_window_A16_A64.json', '{py} -m ariadne.law transfer --src {results}/D3a_law_real{smoke}/A64_s1.law.pkl --dst {results}/D3a_law_real{smoke}/A64k50_s1.law.pkl
+    --mode k --out {out}/transfer_k_A64_A64k50.json', '{py} -m ariadne.law transfer --src {results}/D3a_law_real{smoke}/A64_s1.law.pkl --dst {results}/D3a_law_real{smoke}/A64k50_s1.law.pkl
+    --mode k --scales 2 --out {out}/transfer_k2_A64_A64k50.json', '{py} -m ariadne.law transfer --src {results}/D3a_law_real{smoke}/L4_s1.law.pkl --mode
+    time --out {out}/transfer_time_L4.json', '{py} -m ariadne.law transfer --src {results}/D3a_law_real{smoke}/A64_s1.law.pkl --mode time --out {out}/transfer_time_A64.json',
+  '{py} -m ariadne.law transfer --src {results}/D3a_law_real{smoke}/L4_s1.law.pkl --dst {results}/D3a_law_real{smoke}/A64_s1.law.pkl --mode params --out
+    {out}/transfer_params_L4_A64.json', '{py} -m ariadne.law transfer --src {results}/D3a_law_real{smoke}/A64_s1.law.pkl --dst {results}/D3a_law_real{smoke}/L4_s1.law.pkl
+    --mode params --out {out}/transfer_params_A64_L4.json', '{py} -m ariadne.law strata {results}/D3a_law_real{smoke}/*.law.pkl --by lid --out {out}/strata_lid.json',
+  '{py} -m ariadne.law strata {results}/D3a_law_real{smoke}/*.law.pkl --by rk --out {out}/strata_rk.json', '{py} -m ariadne.law strata {results}/D3a_law_real{smoke}/*.law.pkl
+    --by time --bins 4 --out {out}/strata_time.json', '{py} -m ariadne.law strata {results}/D3a_law_real{smoke}/*.law.pkl --by team --out {out}/strata_team.json',
+  '{py} -m ariadne.law strata {results}/D3a_law_real{smoke}/*.law.pkl --by m --out {out}/strata_m.json', '{py} -m ariadne.static_kernel --law {results}/D3a_law_real{smoke}/L4_s1.law.pkl
+    --predict {results}/D3a_law_real{smoke}/L2_s1.law.pkl {results}/D3a_law_real{smoke}/L4_s1.law.pkl {results}/D3a_law_real{smoke}/L8_s1.law.pkl --out
+    {out}/static_locomo.json', '{py} -m ariadne.static_kernel --law {results}/D3a_law_real{smoke}/A64_s1.law.pkl --predict {results}/D3a_law_real{smoke}/A16_s1.law.pkl
+    {results}/D3a_law_real{smoke}/A64_s1.law.pkl --out {out}/static_agnews.json']
+vars: {boot: 200}
+smoke:
+  vars: {boot: 20}

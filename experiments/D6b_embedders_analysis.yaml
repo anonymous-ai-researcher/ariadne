@@ -1,0 +1,9 @@
+name: D6b_embedders_analysis
+kind: script
+doc: |
+  Analysis half of D6 (run it once per results directory, i.e. once per embedder: add --out results_<EMB>).
+commands: ['{py} -m ariadne.law fit {results}/D6_embedders_and_k{smoke}/*.law.pkl --boot {boot} --out {results}/D6_embedders_and_k{smoke}/fits.json', '{py}
+    -m ariadne.law lag {results}/D6_embedders_and_k{smoke}/*.law.pkl --out {results}/D6_embedders_and_k{smoke}/lag.json']
+vars: {boot: 100}
+smoke:
+  vars: {boot: 10}

@@ -1,0 +1,33 @@
+name: F4_client_processes
+doc: |
+  Question. Are the results an artefact of Python threads?  The same runs with one operating-system process per agent (the commit
+    lock is the PostgreSQL advisory lock; the commit log position comes from a shared counter).
+  Report. tps, extra_calls_per_100, latency: threads vs processes, at 16, 64 and 128 agents.
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 16}
+grid:
+  workload.agents: [16, 64, 128]
+  clients.processes: [1, 2]
+  proto:
+  - _name: none
+    protocol: {kind: none}
+  - _name: exact
+    protocol: {kind: validate, policy: exact}
+  - _name: cadm1.1
+    protocol: {kind: validate, policy: 'cadm:1.1'}
+repeat: 3
+audits: [run]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 8}
+  grid:
+    workload.agents: [8]
+    clients.processes: [1, 2]
+    proto:
+    - _name: cadm1.1
+      protocol: {kind: validate, policy: 'cadm:1.1'}

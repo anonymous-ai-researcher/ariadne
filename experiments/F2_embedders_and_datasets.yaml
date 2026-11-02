@@ -1,0 +1,47 @@
+name: F2_embedders_and_datasets
+doc: |
+  Question. Do the headline numbers of C1 hold for other embedding models and data sets?
+  Run. Prepare each data set with each embedder (python -m ariadne.data prep ...).  The main embedder runs into results/ like every
+       other experiment; each ADDITIONAL embedder runs into its own directory next to it (paper/make_results.py reads results/ and
+       every results_<tag>/ that holds this experiment, so never put the main embedder into a results_<tag> directory as well):
+         EMB=<tag> python experiments/run.py experiments/F2_embedders_and_datasets.yaml --set tau_cos=<value> --out results_<tag>
+       Data sets: LoCoMo, LongMemEval, AG News, Quora Question Pairs (as a stream), MS MARCO passages.
+       Embedders: wordllama (static, 256 d), st:BAAI/bge-small-en-v1.5 (384 d), st:sentence-transformers/all-MiniLM-L6-v2 (384 d),
+       openai:text-embedding-3-small (1536 d).  tau_cos must be re-chosen per model: use `python -m ariadne.data stats` (share of items
+       with a neighbour within the threshold) and keep the share comparable across models.
+  Report. extra_calls_per_100 for exact and cadm:1.05 / 1.1 / 1.2 and the saving in percent, per data set and model.
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  protocol: {kind: validate}
+cases:
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+- _name: LME4
+  workload: {kind: stream, data: 'data/longmemeval__${EMB:-wordllama}.npz', base: 20000, stream: 6000, teams: group, agents: 4}
+- _name: QQP64
+  workload: {kind: stream, data: 'data/qqp__${EMB:-wordllama}.npz', base: 100000, stream: 6000, teams: single, agents: 64}
+- _name: MSM64
+  workload: {kind: stream, data: 'data/msmarco__${EMB:-wordllama}.npz', base: 1000000, stream: 6000, teams: single, agents: 64}
+grid:
+  protocol.policy: [none, exact, 'overlap:0.9', 'cadm:1.05', 'cadm:1.1', 'cadm:1.2']
+repeat: 3
+audits:
+- run
+- name: first
+  only: {protocol.policy: none}
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: L4
+    workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4, stream: 300}
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  grid:
+    protocol.policy: [exact, 'cadm:1.1']

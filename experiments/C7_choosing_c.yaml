@@ -1,0 +1,30 @@
+name: C7_choosing_c
+doc: |
+  Question. How should a deployment choose c?  Live sweep of c on a fine grid: calls saved against each decision proxy's divergence,
+    looking for the knee, and against the index's own approximation ratio (a c below the index's rho p99 buys nothing).
+  Report. extra_calls_per_100 vs c; divergence per proxy vs c; rho_fresh p50 / p90 / p99 as vertical reference lines.
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  protocol: {kind: validate}
+cases:
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+grid:
+  protocol.policy: [exact, 'cadm:1.0', 'cadm:1.005', 'cadm:1.01', 'cadm:1.02', 'cadm:1.03', 'cadm:1.05', 'cadm:1.07', 'cadm:1.1', 'cadm:1.15', 'cadm:1.2',
+    'cadm:1.3', 'cadm:1.5', 'cadm:2.0', 'cadm:3.0']
+repeat: 3
+audits: [run]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  grid:
+    protocol.policy: [exact, 'cadm:1.0', 'cadm:1.1', 'cadm:2.0']

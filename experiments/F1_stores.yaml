@@ -1,0 +1,64 @@
+name: F1_stores
+doc: |
+  Question. Algorithm AV needs only a search call, a write call and a lock.  Does it behave the same on every store?
+  Setup. The client-side protocol on pgvector (HNSW, IVFFlat), Qdrant, Chroma, Milvus, LanceDB, Weaviate, FAISS; the commit lock is an
+    advisory lock on PostgreSQL and a client-side lock elsewhere (with several client machines an external lock service is needed).
+    cert:c needs exact search (pgvector, FAISS, Qdrant, LanceDB without an index).
+  Report. extra_calls_per_100, dup_written_per_100, safety_theorem.violations, cs_mean_ms, recall_fresh per store.
+  Note. Stores with asynchronous indexing or eventual consistency may return a validation read that does not include an acknowledged
+    write; if violations appear on a store, check its consistency settings first and report it (it is a finding, not a bug of the audit).
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 20000, stream: 3000, teams: single, agents: 32}
+cases:
+- _name: pgvector-hnsw
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+- _name: pgvector-ivfflat
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: ivfflat, M: 16, ef_construction: 64, ef_search: 40, lists: 100, probes: 10}
+- _name: qdrant
+  store: {kind: qdrant, url: '${QDRANT_URL:-http://127.0.0.1:6333}', binary: '${QDRANT_BIN:-}', storage: '${WORK:-work}/qdrant'}
+- _name: chroma
+  store: {kind: chroma, path: '${WORK:-work}/chroma'}
+- _name: milvus
+  store: {kind: milvus, uri: '${WORK:-work}/milvus.db'}
+- _name: lancedb
+  store: {kind: lancedb, path: '${WORK:-work}/lancedb'}
+- _name: weaviate
+  store: {kind: weaviate, host: '${WEAVIATE_HOST:-localhost}'}
+- _name: faiss-hnsw
+  store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+- _name: faiss-ivf
+  store: {kind: faissmem, index: ivf, M: 16, ef_construction: 64, ef_search: 40}
+- _name: faiss-flat
+  store: {kind: faissmem, index: flat, M: 16, ef_construction: 64, ef_search: 40}
+grid:
+  proto:
+  - _name: none
+    protocol: {kind: validate, policy: none}
+  - _name: exact
+    protocol: {kind: validate, policy: exact}
+  - _name: cadm1.1
+    protocol: {kind: validate, policy: 'cadm:1.1'}
+repeat: 3
+audits: [run, sep]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 3000, stream: 200, teams: single, agents: 16}
+  cases:
+  - _name: pgvector-hnsw
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  - _name: chroma
+    store: {kind: chroma, path: '${WORK:-work}/chroma'}
+  - _name: lancedb
+    store: {kind: lancedb, path: '${WORK:-work}/lancedb'}
+  - _name: faiss-ivf
+    store: {kind: faissmem, index: ivf, M: 16, ef_construction: 64, ef_search: 40, nlist: 32}
+  grid:
+    proto:
+    - _name: exact
+      protocol: {kind: validate, policy: exact}
+    - _name: cadm1.1
+      protocol: {kind: validate, policy: 'cadm:1.1'}

@@ -1,0 +1,34 @@
+name: F6_failure_injection
+doc: |
+  Question. Does the protocol stay safe and live when clients fail inside the critical section?
+  Setup. A client crashes with probability 1%, 5%, 20% after its validation read and before its write: it rolls back (on PostgreSQL the
+    advisory lock is released with the transaction; with a client-side lock the lock holder must release it, which the engine does),
+    then starts over.
+  Report. crashes, safety_theorem.violations (0), dup_written_per_100 (0 for exact / cadm), tps, latency p99.
+  Not covered: a client that dies while holding a client-side lock on a store without transactions (needs a lease-based lock service).
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate}
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+grid:
+  store:
+  - _name: pgvector
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  - _name: faiss
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  faults.crash_in_cs: [0.0, 0.01, 0.05, 0.2]
+  protocol.policy: [exact, 'cadm:1.1']
+repeat: 3
+audits: [run, sep]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  grid:
+    store:
+    - _name: faiss
+      store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+    faults.crash_in_cs: [0.05]
+    protocol.policy: ['cadm:1.1']

@@ -1,0 +1,55 @@
+name: A1_race_stores
+doc: |
+  Question. Does the similarity check-then-insert race appear on every store, and do the isolation levels that stores offer remove it?
+  Setup. Fan-out workload (each new fact is reported by 1, 2 or 4 agents as near-duplicate vectors); every agent runs
+    retrieve top-k, think, insert unless a memory is within tau.  A correct execution stores one row per fact.
+  Systems. pgvector at READ COMMITTED and at REPEATABLE READ (one transaction around read and write), Qdrant, Chroma, Milvus (Lite or
+    server), LanceDB, Weaviate, in-process FAISS.  Protocols: none, re-read before the write without a lock, re-read under a lock.
+  Report. Duplicates per 100 facts (dup_per_100_events), by fan-out, lost facts.  Expect: large and similar for every store without
+    protection; re-read without a lock lowers but does not remove it; re-read under a lock gives 0.
+base:
+  k: 10
+  tau_cos: 0.15
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 10000, n_events: 600, conc: 16, think: 0.2, jitter: 1.0}
+cases:
+- _name: pgvector-rc
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+- _name: pgvector-rr
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  protocol.isolation: REPEATABLE READ
+  protocol.txn: true
+  protocol.cs_isolation: REPEATABLE READ
+- _name: qdrant
+  store: {kind: qdrant, url: '${QDRANT_URL:-http://127.0.0.1:6333}', binary: '${QDRANT_BIN:-}', storage: '${WORK:-work}/qdrant'}
+- _name: chroma
+  store: {kind: chroma, path: '${WORK:-work}/chroma'}
+- _name: milvus
+  store: {kind: milvus, uri: '${WORK:-work}/milvus.db'}
+- _name: lancedb
+  store: {kind: lancedb, path: '${WORK:-work}/lancedb'}
+- _name: weaviate
+  store: {kind: weaviate, host: '${WEAVIATE_HOST:-localhost}'}
+- _name: faiss
+  store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+grid:
+  proto:
+  - {_name: none, protocol.kind: none}
+  - {_name: reread, protocol.kind: validate, protocol.policy: redecide, protocol.lock: none}
+  - {_name: reread+lock, protocol.kind: validate, protocol.policy: redecide, protocol.lock: global}
+  workload.conc: [4, 16, 32]
+repeat: 3
+audits: [sep]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 3000, n_events: 60, conc: 8, think: 0.02, jitter: 1.0}
+  cases:
+  - _name: pgvector-rc
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  - _name: faiss
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  - _name: chroma
+    store: {kind: chroma, path: '${WORK:-work}/chroma'}
+  grid:
+    workload.conc: [8]

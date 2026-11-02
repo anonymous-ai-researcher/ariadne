@@ -1,0 +1,10 @@
+name: D4b_controls_analysis
+kind: script
+doc: |
+  Analysis half of D4.
+commands: ['{py} -m ariadne.law planted {results}/D4a_exchangeable_controls{smoke}/*exchangeable*.law.pkl --out {out}/controls.json', '{py} -m ariadne.law
+    fit {results}/D4a_exchangeable_controls{smoke}/*.law.pkl --boot {boot} --out {out}/fits.json', '{py} -m ariadne.law bgrank {results}/D4a_exchangeable_controls{smoke}/*.law.pkl
+    --out {out}/bgrank.json']
+vars: {boot: 100}
+smoke:
+  vars: {boot: 10}

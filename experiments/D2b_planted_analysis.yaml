@@ -1,0 +1,10 @@
+name: D2b_planted_analysis
+kind: script
+doc: |
+  Analysis half of D2 (needs the D2a_planted_law results).
+commands: ['{py} -m ariadne.law planted {results}/D2a_planted_law{smoke}/*.law.pkl --boot {boot} --out {out}/planted.json', '{py} -m ariadne.law fit {results}/D2a_planted_law{smoke}/*.law.pkl
+    --boot {boot} --out {out}/fits.json', '{py} -m ariadne.law bgrank {results}/D2a_planted_law{smoke}/*.law.pkl --out {out}/bgrank.json', '{py} -m ariadne.tools.redraw
+    $(ls {results}/D2a_planted_law{smoke}/*_s1.pkl | grep -v ''[.]law[.]pkl'' | head -1) {seeds} > {out}/redraw.txt']
+vars: {boot: 200, seeds: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40}
+smoke:
+  vars: {boot: 20, seeds: 1 2 3}

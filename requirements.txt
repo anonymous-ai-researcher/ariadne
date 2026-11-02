@@ -1,0 +1,18 @@
+# Minimum versions (Python 3.11 or newer; the runs of the paper used Python 3.13).
+numpy>=2.0
+scipy>=1.13
+faiss-cpu>=1.8
+PyYAML>=6.0
+matplotlib>=3.9
+psycopg2-binary>=2.9        # pgvector store and ariadne.pgtests
+requests>=2.31              # qdrant store
+# optional, per store / feature
+chromadb>=1.5               # chroma store
+pymilvus>=3.0               # milvus store (pip install "pymilvus[milvus_lite]" for Milvus Lite)
+lancedb>=0.40               # lancedb store
+weaviate-client>=4.9        # weaviate store
+wordllama>=0.4              # static embedder used for the smoke tests
+sentence-transformers>=3.0  # embedder spec st:<model>
+openai>=1.50                # LLM decider, embedder spec openai:<model>, qa.py
+mem0ai>=2.2                 # ariadne.ext.mem0_race
+h5py>=3.10                  # ANN-Benchmarks HDF5 loader

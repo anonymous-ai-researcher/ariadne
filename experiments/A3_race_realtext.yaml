@@ -1,0 +1,44 @@
+name: A3_race_realtext
+doc: |
+  Question. Is the race an artefact of synthetic paraphrases?  Same test with real duplicate questions (Quora Question Pairs: every
+    labelled duplicate cluster is one fact, its members are the reports) and with real streams replayed in their natural order.
+  Report. clusters: dup_per_100_events for none / re-read / re-read under lock, and the share of true duplicate pairs that fall within
+    tau (workload meta: within_cluster_chord_quantiles) so that the threshold choice is visible.  streams: duplicate writes per 100
+    tasks from the audit (dup_written_per_100, redundant_items), which need no ground-truth labels.
+base:
+  k: 10
+  tau_cos: 0.15
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+cases:
+- _name: qqp
+  workload: {kind: clusters, data: 'data/qqp__${EMB:-wordllama}.npz', n_base: 100000, n_events: 3000, max_fan: 4, conc: 16, think: 0.2, jitter: 1.0}
+- _name: qqp-tau0.10
+  tau_cos: 0.1
+  workload: {kind: clusters, data: 'data/qqp__${EMB:-wordllama}.npz', n_base: 100000, n_events: 3000, max_fan: 4, conc: 16, think: 0.2}
+- _name: qqp-tau0.25
+  tau_cos: 0.25
+  workload: {kind: clusters, data: 'data/qqp__${EMB:-wordllama}.npz', n_base: 100000, n_events: 3000, max_fan: 4, conc: 16, think: 0.2}
+- _name: L4
+  tau_cos: 0.1
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: A64
+  tau_cos: 0.1
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+grid:
+  proto:
+  - {_name: none, protocol.kind: none}
+  - {_name: reread, protocol.kind: validate, protocol.policy: redecide, protocol.lock: none}
+  - {_name: reread+lock, protocol.kind: validate, protocol.policy: redecide, protocol.lock: global}
+repeat: 3
+audits: [sep, serial]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: L4
+    tau_cos: 0.1
+    workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4, stream: 300}
+  - _name: toy-pairs
+    workload: {kind: clusters, data: 'data/toyqqp__${EMB:-wordllama}.npz', n_base: 3000, n_events: 80, max_fan: 4, conc: 8, think: 0.02}

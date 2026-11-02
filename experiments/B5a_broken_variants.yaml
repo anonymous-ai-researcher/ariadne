@@ -1,0 +1,47 @@
+name: B5a_broken_variants
+doc: |
+  Question. Does the auditor detect protocols that look right but are not?  Three realistic mistakes, run live:
+    no-lock    validation without mutual exclusion (the write can interleave with another validation);
+    group-lock one commit lock per team on a store shared by all teams (unsound: teams still see each other's writes);
+    rr-cs      PostgreSQL only: the critical section at REPEATABLE READ takes its snapshot before the lock is granted, so the
+               validation read does not see the writes it waited for.
+    Then, offline, `python -m ariadne.selftest` plants faults into the logs of a correct run (skipped validation, validation against an
+    older state, an item that is not in the store, misreported distances) and re-audits.
+  Report. dup_written_per_100 and dup_written_floor_per_100 per variant.  Read them together: the safety theorem bounds the
+    committed answer by c * rho of the VALIDATION answer, so a protocol whose validation read is itself stale (rr-cs) does not violate
+    the inequality, it makes rho_fresh large.  The tell-tale is dup_written_floor_per_100 > 0 and rho_fresh far above the index's own
+    level: the validation read missed writes that were committed before it.  no-lock shows up as duplicate writes with a clean floor.
+    At smoke scale: correct 0 / 0, no-lock 12.7 duplicate writes per 100, rr-cs 46.6.  Self-test: planted vs detected per fault class.
+    The group-lock mistake can only show on workloads with several teams (L8; A64 has one team and the fan-out workload too).
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+cases:
+- _name: fan
+  tau_cos: 0.15
+  workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 10000, n_events: 600, conc: 32, think: 0.2, jitter: 1.0}
+- _name: L8
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 8}
+- _name: A64rr8
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: 'rr:8', agents: 8}
+grid:
+  proto:
+  - _name: correct
+    protocol: {kind: validate, policy: 'cadm:1.1'}
+  - _name: no-lock
+    protocol: {kind: validate, policy: 'cadm:1.1', lock: none}
+  - _name: group-lock
+    protocol: {kind: validate, policy: 'cadm:1.1', lock: group}
+  - _name: rr-cs
+    protocol: {kind: validate, policy: 'cadm:1.1', cs_isolation: REPEATABLE READ}
+repeat: 3
+audits: [run, sep]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+  cases:
+  - _name: fan
+    tau_cos: 0.15
+    workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 3000, n_events: 60, conc: 8, think: 0.02, jitter: 1.0}

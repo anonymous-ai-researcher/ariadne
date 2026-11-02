@@ -1,0 +1,10 @@
+name: A10_versions
+kind: script
+doc: |
+  Question. Do the findings of A6 and A7 hold on other PostgreSQL versions?  Runs locks, hammer and gist in the official
+    pgvector/pgvector:pgNN images for PostgreSQL 14 to 18.
+  Status. Optional; not used for the paper, which tests PostgreSQL 16.15 only.  Read ariadne/pgtests/matrix.sh before running.
+  Also do before submission: search the pgsql-hackers / pgsql-bugs archives and the pgvector issue tracker for prior reports.
+commands: ['bash ariadne/pgtests/matrix.sh {out}']
+smoke:
+  commands: [bash -n ariadne/pgtests/matrix.sh]

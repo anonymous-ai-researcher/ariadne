@@ -1,0 +1,5 @@
+name: G3_micro
+kind: script
+doc: |
+  Microbenchmarks that need no store: cost of the admissibility test against k, and cost of the offline audit against log size.
+commands: ['{py} -m ariadne.micro --out {out}/micro.json', '{py} -m ariadne.micro --audit {results}/C1_calls_vs_policy{smoke}/*none*.pkl --out {out}/audit_cost.json']

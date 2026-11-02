@@ -1,0 +1,56 @@
+name: C4_downstream_qa
+kind: script
+doc: 'Downstream answer quality.  Rebuilds the memory of every C3 run of the same --out directory and answers
+
+  the benchmark questions from it.  The answering and judging model is fixed (QA_MODEL, default gpt-4o-mini-2024-07-18 on
+
+  OpenAI; OPENAI_BASE_URL must be unset), whichever model built the memory, so that only the memory differs between rows.
+
+  Per seed the exact-validation run is the reference of the paired comparison; qa_details.jsonl keeps the per-question
+
+  scores, from which the paper pools the paired differences of the five seeds (bootstrap over seed and question).  LoCoMo: all non-adversarial questions.
+
+  LongMemEval: only questions whose haystack received stream items (--touched); the loader of ariadne/qa.py was written
+
+  without the file and must be checked first (plan, step L-3).
+
+  '
+commands:
+- '{py} -m ariadne.qa --runs {results}/C3_llm_decisions{smoke}/L4_exact_s1.pkl {results}/C3_llm_decisions{smoke}/L4_none_s1.pkl {results}/C3_llm_decisions{smoke}/L4_overlap-0.9_s1.pkl {results}/C3_llm_decisions{smoke}/L4_cadm-1.05_s1.pkl
+  {results}/C3_llm_decisions{smoke}/L4_cadm-1.1_s1.pkl {results}/C3_llm_decisions{smoke}/L4_cadm-1.2_s1.pkl --dataset locomo --raw ${LOCOMO_RAW:-data/raw/locomo10.json} --embedder ${EMB_SPEC:-wordllama}
+  --model ${QA_MODEL:-gpt-4o-mini-2024-07-18} --cache {out}/qa_cache.jsonl --k 10 --judge --compare --workers 16 --out {out}/qa.jsonl --details {out}/qa_details.jsonl {extra}'
+- '{py} -m ariadne.qa --runs {results}/C3_llm_decisions{smoke}/L4_exact_s2.pkl {results}/C3_llm_decisions{smoke}/L4_none_s2.pkl {results}/C3_llm_decisions{smoke}/L4_overlap-0.9_s2.pkl {results}/C3_llm_decisions{smoke}/L4_cadm-1.05_s2.pkl
+  {results}/C3_llm_decisions{smoke}/L4_cadm-1.1_s2.pkl {results}/C3_llm_decisions{smoke}/L4_cadm-1.2_s2.pkl --dataset locomo --raw ${LOCOMO_RAW:-data/raw/locomo10.json} --embedder ${EMB_SPEC:-wordllama}
+  --model ${QA_MODEL:-gpt-4o-mini-2024-07-18} --cache {out}/qa_cache.jsonl --k 10 --judge --compare --workers 16 --out {out}/qa.jsonl --details {out}/qa_details.jsonl {extra}'
+- '{py} -m ariadne.qa --runs {results}/C3_llm_decisions{smoke}/L4_exact_s3.pkl {results}/C3_llm_decisions{smoke}/L4_none_s3.pkl {results}/C3_llm_decisions{smoke}/L4_overlap-0.9_s3.pkl {results}/C3_llm_decisions{smoke}/L4_cadm-1.05_s3.pkl
+  {results}/C3_llm_decisions{smoke}/L4_cadm-1.1_s3.pkl {results}/C3_llm_decisions{smoke}/L4_cadm-1.2_s3.pkl --dataset locomo --raw ${LOCOMO_RAW:-data/raw/locomo10.json} --embedder ${EMB_SPEC:-wordllama}
+  --model ${QA_MODEL:-gpt-4o-mini-2024-07-18} --cache {out}/qa_cache.jsonl --k 10 --judge --compare --workers 16 --out {out}/qa.jsonl --details {out}/qa_details.jsonl {extra}'
+- '{py} -m ariadne.qa --runs {results}/C3_llm_decisions{smoke}/L4_exact_s4.pkl {results}/C3_llm_decisions{smoke}/L4_none_s4.pkl {results}/C3_llm_decisions{smoke}/L4_overlap-0.9_s4.pkl {results}/C3_llm_decisions{smoke}/L4_cadm-1.05_s4.pkl
+  {results}/C3_llm_decisions{smoke}/L4_cadm-1.1_s4.pkl {results}/C3_llm_decisions{smoke}/L4_cadm-1.2_s4.pkl --dataset locomo --raw ${LOCOMO_RAW:-data/raw/locomo10.json} --embedder ${EMB_SPEC:-wordllama}
+  --model ${QA_MODEL:-gpt-4o-mini-2024-07-18} --cache {out}/qa_cache.jsonl --k 10 --judge --compare --workers 16 --out {out}/qa.jsonl --details {out}/qa_details.jsonl {extra}'
+- '{py} -m ariadne.qa --runs {results}/C3_llm_decisions{smoke}/L4_exact_s5.pkl {results}/C3_llm_decisions{smoke}/L4_none_s5.pkl {results}/C3_llm_decisions{smoke}/L4_overlap-0.9_s5.pkl {results}/C3_llm_decisions{smoke}/L4_cadm-1.05_s5.pkl
+  {results}/C3_llm_decisions{smoke}/L4_cadm-1.1_s5.pkl {results}/C3_llm_decisions{smoke}/L4_cadm-1.2_s5.pkl --dataset locomo --raw ${LOCOMO_RAW:-data/raw/locomo10.json} --embedder ${EMB_SPEC:-wordllama}
+  --model ${QA_MODEL:-gpt-4o-mini-2024-07-18} --cache {out}/qa_cache.jsonl --k 10 --judge --compare --workers 16 --out {out}/qa.jsonl --details {out}/qa_details.jsonl {extra}'
+- '{py} -m ariadne.qa --runs {results}/C3_llm_decisions{smoke}/LME4_exact_s1.pkl {results}/C3_llm_decisions{smoke}/LME4_none_s1.pkl {results}/C3_llm_decisions{smoke}/LME4_overlap-0.9_s1.pkl {results}/C3_llm_decisions{smoke}/LME4_cadm-1.05_s1.pkl
+  {results}/C3_llm_decisions{smoke}/LME4_cadm-1.1_s1.pkl {results}/C3_llm_decisions{smoke}/LME4_cadm-1.2_s1.pkl --dataset longmemeval --raw ${LME_RAW:-data/raw/longmemeval_s.json} --embedder ${EMB_SPEC:-wordllama}
+  --model ${QA_MODEL:-gpt-4o-mini-2024-07-18} --cache {out}/qa_cache.jsonl --k 10 --judge --compare --workers 16 --out {out}/qa.jsonl --details {out}/qa_details.jsonl --touched {extra}'
+- '{py} -m ariadne.qa --runs {results}/C3_llm_decisions{smoke}/LME4_exact_s2.pkl {results}/C3_llm_decisions{smoke}/LME4_none_s2.pkl {results}/C3_llm_decisions{smoke}/LME4_overlap-0.9_s2.pkl {results}/C3_llm_decisions{smoke}/LME4_cadm-1.05_s2.pkl
+  {results}/C3_llm_decisions{smoke}/LME4_cadm-1.1_s2.pkl {results}/C3_llm_decisions{smoke}/LME4_cadm-1.2_s2.pkl --dataset longmemeval --raw ${LME_RAW:-data/raw/longmemeval_s.json} --embedder ${EMB_SPEC:-wordllama}
+  --model ${QA_MODEL:-gpt-4o-mini-2024-07-18} --cache {out}/qa_cache.jsonl --k 10 --judge --compare --workers 16 --out {out}/qa.jsonl --details {out}/qa_details.jsonl --touched {extra}'
+- '{py} -m ariadne.qa --runs {results}/C3_llm_decisions{smoke}/LME4_exact_s3.pkl {results}/C3_llm_decisions{smoke}/LME4_none_s3.pkl {results}/C3_llm_decisions{smoke}/LME4_overlap-0.9_s3.pkl {results}/C3_llm_decisions{smoke}/LME4_cadm-1.05_s3.pkl
+  {results}/C3_llm_decisions{smoke}/LME4_cadm-1.1_s3.pkl {results}/C3_llm_decisions{smoke}/LME4_cadm-1.2_s3.pkl --dataset longmemeval --raw ${LME_RAW:-data/raw/longmemeval_s.json} --embedder ${EMB_SPEC:-wordllama}
+  --model ${QA_MODEL:-gpt-4o-mini-2024-07-18} --cache {out}/qa_cache.jsonl --k 10 --judge --compare --workers 16 --out {out}/qa.jsonl --details {out}/qa_details.jsonl --touched {extra}'
+- '{py} -m ariadne.qa --runs {results}/C3_llm_decisions{smoke}/LME4_exact_s4.pkl {results}/C3_llm_decisions{smoke}/LME4_none_s4.pkl {results}/C3_llm_decisions{smoke}/LME4_overlap-0.9_s4.pkl {results}/C3_llm_decisions{smoke}/LME4_cadm-1.05_s4.pkl
+  {results}/C3_llm_decisions{smoke}/LME4_cadm-1.1_s4.pkl {results}/C3_llm_decisions{smoke}/LME4_cadm-1.2_s4.pkl --dataset longmemeval --raw ${LME_RAW:-data/raw/longmemeval_s.json} --embedder ${EMB_SPEC:-wordllama}
+  --model ${QA_MODEL:-gpt-4o-mini-2024-07-18} --cache {out}/qa_cache.jsonl --k 10 --judge --compare --workers 16 --out {out}/qa.jsonl --details {out}/qa_details.jsonl --touched {extra}'
+- '{py} -m ariadne.qa --runs {results}/C3_llm_decisions{smoke}/LME4_exact_s5.pkl {results}/C3_llm_decisions{smoke}/LME4_none_s5.pkl {results}/C3_llm_decisions{smoke}/LME4_overlap-0.9_s5.pkl {results}/C3_llm_decisions{smoke}/LME4_cadm-1.05_s5.pkl
+  {results}/C3_llm_decisions{smoke}/LME4_cadm-1.1_s5.pkl {results}/C3_llm_decisions{smoke}/LME4_cadm-1.2_s5.pkl --dataset longmemeval --raw ${LME_RAW:-data/raw/longmemeval_s.json} --embedder ${EMB_SPEC:-wordllama}
+  --model ${QA_MODEL:-gpt-4o-mini-2024-07-18} --cache {out}/qa_cache.jsonl --k 10 --judge --compare --workers 16 --out {out}/qa.jsonl --details {out}/qa_details.jsonl --touched {extra}'
+vars:
+  extra: ''
+smoke:
+  vars:
+    extra: --mock --limit 100
+  commands:
+  - '{py} -m ariadne.qa --runs {results}/C3_llm_decisions{smoke}/L4_exact_s1.pkl {results}/C3_llm_decisions{smoke}/L4_none_s1.pkl {results}/C3_llm_decisions{smoke}/L4_cadm-1.1_s1.pkl --dataset locomo --raw
+    ${LOCOMO_RAW:-data/raw/locomo10.json} --embedder ${EMB_SPEC:-wordllama} --model ${QA_MODEL:-gpt-4o-mini-2024-07-18} --k 10 --judge --compare --workers 8 --out {out}/qa.jsonl --details {out}/qa_details.jsonl {extra}'

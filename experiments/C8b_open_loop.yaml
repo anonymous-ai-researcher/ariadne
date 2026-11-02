@@ -1,0 +1,45 @@
+name: C8b_open_loop
+doc: |
+  Open-loop half of C8: Poisson and bursty arrivals at several rates (tasks per second) instead of a fixed number of agents.
+  Report. latency including queueing, extra_calls_per_100, rounds_p99; the rate at which each protocol stops keeping up.
+base:
+  k: 10
+  tau_cos: 0.1
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate}
+  clients: {max_open: 512}
+cases:
+- _name: A
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 1}
+grid:
+  arr:
+  - _name: poisson20
+    workload.arrival: {kind: poisson, rate: 20}
+  - _name: poisson50
+    workload.arrival: {kind: poisson, rate: 50}
+  - _name: poisson100
+    workload.arrival: {kind: poisson, rate: 100}
+  - _name: poisson200
+    workload.arrival: {kind: poisson, rate: 200}
+  - _name: poisson400
+    workload.arrival: {kind: poisson, rate: 400}
+  - _name: bursty50
+    workload.arrival: {kind: bursty, rate: 50, burst: 16, spread: 0.05}
+  - _name: bursty200
+    workload.arrival: {kind: bursty, rate: 200, burst: 16, spread: 0.05}
+  protocol.policy: [none, exact, 'cadm:1.1']
+repeat: 3
+audits: [run]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: A
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 1}
+  grid:
+    arr:
+    - _name: poisson200
+      workload.arrival: {kind: poisson, rate: 200}
+    protocol.policy: [exact, 'cadm:1.1']

@@ -1,0 +1,75 @@
+name: C10_vs_pessimistic
+doc: |
+  Question. Optimistic validation against pessimistic predicate locking on the read ball, with and without tolerance.
+  Setup. Ball locks in the client library: a reader registers (query, answer) and holds it through the think step; a writer whose
+    insertion would enter a registered ball (c = 1) or would break c-admissibility of the held answer (c > 1) waits; waiting cycles
+    abort one transaction, which re-reads and thinks again.  Compared with AV at the same c, a global lock across the think step, and
+    SERIALIZABLE.
+  Report. extra_calls_per_100 (deadlock victims re-think), ball.waits / ball.deadlocks / ball.stale_reads, lock_wait_mean_ms, latency
+    tail, tps.  Expect: tolerance helps both designs by about the same factor; ball locks trade re-thinks for waits and deadlocks.
+  Note. The ball-lock manager lives in one process: it shows the behaviour of the design, not of a server-side implementation.
+base:
+  k: 10
+  tau_cos: 0.1
+  store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+cases:
+- _name: L2
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 2}
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: L8
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 8}
+- _name: A16
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 16}
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+- _name: fan
+  tau_cos: 0.15
+  workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 10000, n_events: 600, conc: 32, think: 0.2, jitter: 1.0}
+grid:
+  proto:
+  - _name: none
+    protocol: {kind: none}
+  - _name: lock-long
+    protocol: {kind: lock_long}
+  - _name: av-1.0
+    protocol: {kind: validate, policy: 'cert:1.0'}
+  - _name: av-1.05
+    protocol: {kind: validate, policy: 'cert:1.05'}
+  - _name: av-1.1
+    protocol: {kind: validate, policy: 'cert:1.1'}
+  - _name: av-1.2
+    protocol: {kind: validate, policy: 'cert:1.2'}
+  - _name: av-1.5
+    protocol: {kind: validate, policy: 'cert:1.5'}
+  - _name: ball-1.0
+    protocol: {kind: ball, c: 1.0}
+  - _name: ball-1.05
+    protocol: {kind: ball, c: 1.05}
+  - _name: ball-1.1
+    protocol: {kind: ball, c: 1.1}
+  - _name: ball-1.2
+    protocol: {kind: ball, c: 1.2}
+  - _name: ball-1.5
+    protocol: {kind: ball, c: 1.5}
+repeat: 3
+audits: [run, sep]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+  cases:
+  - _name: L4
+    workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4, stream: 300}
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  grid:
+    proto:
+    - _name: av-1.0
+      protocol: {kind: validate, policy: 'cert:1.0'}
+    - _name: av-1.1
+      protocol: {kind: validate, policy: 'cert:1.1'}
+    - _name: ball-1.0
+      protocol: {kind: ball, c: 1.0}
+    - _name: ball-1.1
+      protocol: {kind: ball, c: 1.1}

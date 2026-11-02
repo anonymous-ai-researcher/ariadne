@@ -1,0 +1,39 @@
+name: E2_lock_scope
+doc: |
+  Question. What does the single commit lock cost and what happens with a narrower one?
+  Variants. global lock (sound); one lock per team on a shared store (unsound in general, sound only if teams never retrieve each
+    other's items); no lock.  Measured at increasing numbers of agents.
+  Report. lock_wait_mean_ms / p99, lock_held_fraction, tps; safety_theorem.violations and dup_written_per_100 for the narrower scopes.
+base:
+  k: 10
+  tau_cos: 0.1
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate}
+cases:
+- _name: L2
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 2}
+- _name: L8
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 8}
+- _name: L32
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 32}
+- _name: A64rr8
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: 'rr:8', agents: 8}
+- _name: A256rr16
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 12000, teams: 'rr:16', agents: 16}
+grid:
+  protocol.lock: [global, group, none]
+  protocol.policy: [exact, 'cadm:1.1']
+repeat: 3
+audits: [run, sep]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: L4
+    workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4, stream: 300}
+  - _name: A16rr4
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: 'rr:4', agents: 4}
+  grid:
+    protocol.policy: ['cadm:1.1']

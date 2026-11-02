@@ -1,0 +1,2811 @@
+%% Bibliography for the SIGMOD 2027 submission (paper 1807).
+%% Entry style follows a cleaned DBLP export: DBLP-pattern keys, abbreviated venues,
+%% no doi/url/editor/timestamp fields. dblp.org could not be queried automatically, so the keys
+%% were constructed with DBLP's naming pattern, and volume/number/pages were taken from Crossref,
+%% OpenAlex, publisher pages or the papers themselves. The comment above each entry is its id in
+%% the project's reference list.
+
+%% ---------------------------------------------------------------------
+%% A. Isolation theory and concurrency control
+%% ---------------------------------------------------------------------
+
+% A1
+@article{DBLP:journals/cacm/EswaranGLT76,
+  author       = {Kapali P. Eswaran and
+                  Jim N. Gray and
+                  Raymond A. Lorie and
+                  Irving L. Traiger},
+  title        = {The Notions of Consistency and Predicate Locks in a Database System},
+  journal      = {Commun. {ACM}},
+  volume       = {19},
+  number       = {11},
+  pages        = {624--633},
+  year         = {1976}
+}
+
+% A2
+@inproceedings{DBLP:conf/ds/GrayLPT76,
+  author       = {Jim Gray and
+                  Raymond A. Lorie and
+                  Gianfranco R. Putzolu and
+                  Irving L. Traiger},
+  title        = {Granularity of Locks and Degrees of Consistency in a Shared Data Base},
+  booktitle    = {Proc. {IFIP} Working Conference on Modelling in Data Base Management Systems},
+  publisher    = {North-Holland},
+  year         = {1976}
+}
+
+% A3
+@article{DBLP:journals/jacm/Papadimitriou79,
+  author       = {Christos H. Papadimitriou},
+  title        = {The Serializability of Concurrent Database Updates},
+  journal      = {J. {ACM}},
+  volume       = {26},
+  number       = {4},
+  pages        = {631--653},
+  year         = {1979}
+}
+
+% A4
+@book{DBLP:books/aw/BernsteinHG87,
+  author       = {Philip A. Bernstein and
+                  Vassos Hadzilacos and
+                  Nathan Goodman},
+  title        = {Concurrency Control and Recovery in Database Systems},
+  publisher    = {Addison-Wesley},
+  year         = {1987}
+}
+
+% A5
+@article{DBLP:journals/tods/KungR81,
+  author       = {H. T. Kung and
+                  John T. Robinson},
+  title        = {On Optimistic Methods for Concurrency Control},
+  journal      = {{ACM} Trans. Database Syst.},
+  volume       = {6},
+  number       = {2},
+  pages        = {213--226},
+  year         = {1981}
+}
+
+% A6
+@inproceedings{DBLP:conf/sigmod/BerensonBGMOO95,
+  author       = {Hal Berenson and
+                  Philip A. Bernstein and
+                  Jim Gray and
+                  Jim Melton and
+                  Elizabeth J. O'Neil and
+                  Patrick E. O'Neil},
+  title        = {A Critique of {ANSI} {SQL} Isolation Levels},
+  booktitle    = {Proc. {SIGMOD}'95},
+  pages        = {1--10},
+  publisher    = {{ACM}},
+  year         = {1995}
+}
+
+% A7
+@inproceedings{DBLP:conf/icde/AdyaLO00,
+  author       = {Atul Adya and
+                  Barbara Liskov and
+                  Patrick E. O'Neil},
+  title        = {Generalized Isolation Level Definitions},
+  booktitle    = {Proc. {ICDE}'00},
+  pages        = {67--78},
+  publisher    = {{IEEE} Computer Society},
+  year         = {2000}
+}
+
+% A8
+@phdthesis{Adya1999Weak,
+  author       = {Atul Adya},
+  title        = {Weak Consistency: A Generalized Theory and Optimistic Implementations for Distributed Transactions},
+  school       = {{MIT}},
+  type         = {{Ph.D.} dissertation},
+  number       = {MIT/LCS/TR-786},
+  year         = {1999},
+  url          = {https://pmg.csail.mit.edu/pubs/adya99__weak_consis-abstract.html}
+}
+
+% A9
+@article{DBLP:journals/tods/FeketeLOOS05,
+  author       = {Alan Fekete and
+                  Dimitrios Liarokapis and
+                  Elizabeth O'Neil and
+                  Patrick O'Neil and
+                  Dennis Shasha},
+  title        = {Making Snapshot Isolation Serializable},
+  journal      = {{ACM} Trans. Database Syst.},
+  volume       = {30},
+  number       = {2},
+  pages        = {492--528},
+  year         = {2005}
+}
+
+% A10
+@inproceedings{DBLP:conf/sigmod/CahillRF08,
+  author       = {Michael J. Cahill and
+                  Uwe R{\"{o}}hm and
+                  Alan D. Fekete},
+  title        = {Serializable Isolation for Snapshot Databases},
+  booktitle    = {Proc. {SIGMOD}'08},
+  pages        = {729--738},
+  publisher    = {{ACM}},
+  year         = {2008}
+}
+
+% A11
+@article{DBLP:journals/pvldb/PortsG12,
+  author       = {Dan R. K. Ports and
+                  Kevin Grittner},
+  title        = {Serializable Snapshot Isolation in {PostgreSQL}},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {5},
+  number       = {12},
+  pages        = {1850--1861},
+  year         = {2012}
+}
+
+% A12
+@inproceedings{DBLP:conf/sigmod/JordanBB81,
+  author       = {J. R. Jordan and
+                  J. Banerjee and
+                  R. B. Batman},
+  title        = {Precision Locks},
+  booktitle    = {Proc. {SIGMOD}'81},
+  pages        = {143--147},
+  publisher    = {{ACM}},
+  year         = {1981}
+}
+
+% A13
+@inproceedings{DBLP:conf/vldb/Mohan90,
+  author       = {C. Mohan},
+  title        = {{ARIES/KVL}: A Key-Value Locking Method for Concurrency Control of Multiaction Transactions Operating on {B}-Tree Indexes},
+  booktitle    = {Proc. {VLDB}'90},
+  pages        = {392--405},
+  publisher    = {Morgan Kaufmann},
+  year         = {1990}
+}
+
+% A14
+@inproceedings{DBLP:conf/sigmod/MohanL92,
+  author       = {C. Mohan and
+                  Frank Levine},
+  title        = {{ARIES/IM}: An Efficient and High Concurrency Index Management Method Using Write-Ahead Logging},
+  booktitle    = {Proc. {SIGMOD}'92},
+  pages        = {371--380},
+  publisher    = {{ACM}},
+  year         = {1992}
+}
+
+% A15
+@inproceedings{DBLP:conf/vldb/Lomet93,
+  author       = {David B. Lomet},
+  title        = {Key Range Locking Strategies for Improved Concurrency},
+  booktitle    = {Proc. {VLDB}'93},
+  pages        = {655--664},
+  publisher    = {Morgan Kaufmann},
+  year         = {1993}
+}
+
+% A16
+@article{DBLP:journals/tods/Graefe10,
+  author       = {Goetz Graefe},
+  title        = {A Survey of {B}-Tree Locking Techniques},
+  journal      = {{ACM} Trans. Database Syst.},
+  volume       = {35},
+  number       = {3},
+  pages        = {16:1--16:26},
+  year         = {2010}
+}
+
+% A17
+@article{DBLP:journals/tods/LehmanY81,
+  author       = {Philip L. Lehman and
+                  S. Bing Yao},
+  title        = {Efficient Locking for Concurrent Operations on {B}-Trees},
+  journal      = {{ACM} Trans. Database Syst.},
+  volume       = {6},
+  number       = {4},
+  pages        = {650--670},
+  year         = {1981}
+}
+
+% A18
+@inproceedings{DBLP:conf/sosp/TuZKLM13,
+  author       = {Stephen Tu and
+                  Wenting Zheng and
+                  Eddie Kohler and
+                  Barbara Liskov and
+                  Samuel Madden},
+  title        = {Speedy Transactions in Multicore In-Memory Databases},
+  booktitle    = {Proc. {SOSP}'13},
+  pages        = {18--32},
+  publisher    = {{ACM}},
+  year         = {2013}
+}
+
+% A19
+@inproceedings{DBLP:conf/sigmod/NeumannMK15,
+  author       = {Thomas Neumann and
+                  Tobias M{\"{u}}hlbauer and
+                  Alfons Kemper},
+  title        = {Fast Serializable Multi-Version Concurrency Control for Main-Memory Database Systems},
+  booktitle    = {Proc. {SIGMOD}'15},
+  pages        = {677--689},
+  publisher    = {{ACM}},
+  year         = {2015}
+}
+
+% A20
+@article{DBLP:journals/pvldb/LarsonBDFPZ11,
+  author       = {Per{-}{\AA}ke Larson and
+                  Spyros Blanas and
+                  Cristian Diaconu and
+                  Craig Freedman and
+                  Jignesh M. Patel and
+                  Mike Zwilling},
+  title        = {High-Performance Concurrency Control Mechanisms for Main-Memory Databases},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {5},
+  number       = {4},
+  pages        = {298--309},
+  year         = {2011}
+}
+
+% A21
+@article{DBLP:journals/pvldb/YuBPDS14,
+  author       = {Xiangyao Yu and
+                  George Bezerra and
+                  Andrew Pavlo and
+                  Srinivas Devadas and
+                  Michael Stonebraker},
+  title        = {Staring into the Abyss: An Evaluation of Concurrency Control with One Thousand Cores},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {8},
+  number       = {3},
+  pages        = {209--220},
+  year         = {2014}
+}
+
+% A22
+@article{DBLP:journals/pvldb/WuALXP17,
+  author       = {Yingjun Wu and
+                  Joy Arulraj and
+                  Jiexi Lin and
+                  Ran Xian and
+                  Andrew Pavlo},
+  title        = {An Empirical Evaluation of In-Memory Multi-Version Concurrency Control},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {10},
+  number       = {7},
+  pages        = {781--792},
+  year         = {2017}
+}
+
+% A23
+@article{DBLP:journals/pvldb/BailisDFGHS13,
+  author       = {Peter Bailis and
+                  Aaron Davidson and
+                  Alan Fekete and
+                  Ali Ghodsi and
+                  Joseph M. Hellerstein and
+                  Ion Stoica},
+  title        = {Highly Available Transactions: Virtues and Limitations},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {7},
+  number       = {3},
+  pages        = {181--192},
+  year         = {2013}
+}
+
+% A24
+@article{DBLP:journals/pvldb/BailisFFGHS14,
+  author       = {Peter Bailis and
+                  Alan Fekete and
+                  Michael J. Franklin and
+                  Ali Ghodsi and
+                  Joseph M. Hellerstein and
+                  Ion Stoica},
+  title        = {Coordination Avoidance in Database Systems},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {8},
+  number       = {3},
+  pages        = {185--196},
+  year         = {2014}
+}
+
+% A25
+@inproceedings{DBLP:conf/sigmod/BailisFFGHS15,
+  author       = {Peter Bailis and
+                  Alan Fekete and
+                  Michael J. Franklin and
+                  Ali Ghodsi and
+                  Joseph M. Hellerstein and
+                  Ion Stoica},
+  title        = {Feral Concurrency Control: An Empirical Investigation of Modern Application Integrity},
+  booktitle    = {Proc. {SIGMOD}'15},
+  pages        = {1327--1342},
+  publisher    = {{ACM}},
+  year         = {2015}
+}
+
+% A26
+@inproceedings{DBLP:conf/sigmod/WarszawskiB17,
+  author       = {Todd Warszawski and
+                  Peter Bailis},
+  title        = {{ACIDRain}: Concurrency-Related Attacks on Database-Backed Web Applications},
+  booktitle    = {Proc. {SIGMOD}'17},
+  pages        = {5--20},
+  publisher    = {{ACM}},
+  year         = {2017}
+}
+
+% A27
+@inproceedings{DBLP:conf/podc/CrooksPAC17,
+  author       = {Natacha Crooks and
+                  Youer Pu and
+                  Lorenzo Alvisi and
+                  Allen Clement},
+  title        = {Seeing is Believing: A Client-Centric Specification of Database Isolation},
+  booktitle    = {Proc. {PODC}'17},
+  pages        = {73--82},
+  publisher    = {{ACM}},
+  year         = {2017}
+}
+
+% A28
+@inproceedings{DBLP:conf/concur/CeroneBG15,
+  author       = {Andrea Cerone and
+                  Giovanni Bernardi and
+                  Alexey Gotsman},
+  title        = {A Framework for Transactional Consistency Models with Atomic Visibility},
+  booktitle    = {Proc. {CONCUR}'15},
+  series       = {LIPIcs},
+  volume       = {42},
+  pages        = {58--71},
+  publisher    = {Schloss Dagstuhl - Leibniz-Zentrum f{\"{u}}r Informatik},
+  year         = {2015}
+}
+
+% A29
+@article{DBLP:journals/toplas/HerlihyW90,
+  author       = {Maurice P. Herlihy and
+                  Jeannette M. Wing},
+  title        = {Linearizability: A Correctness Condition for Concurrent Objects},
+  journal      = {{ACM} Trans. Program. Lang. Syst.},
+  volume       = {12},
+  number       = {3},
+  pages        = {463--492},
+  year         = {1990}
+}
+
+% A30
+@article{DBLP:journals/pvldb/KingsburyA20,
+  author       = {Kyle Kingsbury and
+                  Peter Alvaro},
+  title        = {{Elle}: Inferring Isolation Anomalies from Experimental Observations},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {14},
+  number       = {3},
+  pages        = {268--280},
+  year         = {2020}
+}
+
+% A31
+@inproceedings{DBLP:conf/osdi/TanZMW20,
+  author       = {Cheng Tan and
+                  Changgeng Zhao and
+                  Shuai Mu and
+                  Michael Walfish},
+  title        = {{Cobra}: Making Transactional Key-Value Stores Verifiably Serializable},
+  booktitle    = {Proc. {OSDI}'20},
+  pages        = {63--80},
+  publisher    = {{USENIX} Association},
+  year         = {2020}
+}
+
+% A32
+@article{DBLP:journals/pacmpl/BiswasE19,
+  author       = {Ranadeep Biswas and
+                  Constantin Enea},
+  title        = {On the Complexity of Checking Transactional Consistency},
+  journal      = {Proc. {ACM} Program. Lang.},
+  volume       = {3},
+  number       = {{OOPSLA}},
+  pages        = {165:1--165:28},
+  year         = {2019}
+}
+
+%% ---------------------------------------------------------------------
+%% B. Relaxed and approximate correctness; C. Concurrency in multidimensional indexes; D. kNN, reverse kNN, continuous queries, deduplication (part 1)
+%% ---------------------------------------------------------------------
+
+% B1
+@inproceedings{DBLP:conf/sigmod/PuL91,
+  author       = {Calton Pu and
+                  Avraham Leff},
+  title        = {Replica Control in Distributed Systems: An Asynchronous Approach},
+  booktitle    = {Proc. {SIGMOD}'91},
+  pages        = {377--386},
+  publisher    = {{ACM}},
+  year         = {1991}
+}
+
+% B2
+@article{DBLP:journals/tkde/RamamrithamP95,
+  author       = {Krithi Ramamritham and
+                  Calton Pu},
+  title        = {A Formal Characterization of Epsilon Serializability},
+  journal      = {{IEEE} Trans. Knowl. Data Eng.},
+  volume       = {7},
+  number       = {6},
+  pages        = {997--1007},
+  year         = {1995}
+}
+
+% B3
+@inproceedings{DBLP:conf/opodis/AfekKY10,
+  author       = {Yehuda Afek and
+                  Guy Korland and
+                  Eitan Yanovsky},
+  title        = {Quasi-Linearizability: Relaxed Consistency for Improved Concurrency},
+  booktitle    = {Proc. {OPODIS}'10},
+  series       = {Lecture Notes in Computer Science},
+  volume       = {6490},
+  pages        = {395--410},
+  publisher    = {Springer},
+  year         = {2010}
+}
+
+% B4
+@inproceedings{DBLP:conf/popl/HenzingerKPSS13,
+  author       = {Thomas A. Henzinger and
+                  Christoph M. Kirsch and
+                  Hannes Payer and
+                  Ali Sezgin and
+                  Ana Sokolova},
+  title        = {Quantitative Relaxation of Concurrent Data Structures},
+  booktitle    = {Proc. {POPL}'13},
+  pages        = {317--328},
+  publisher    = {{ACM}},
+  year         = {2013}
+}
+
+% B5
+@article{DBLP:journals/tocs/YuV02,
+  author       = {Haifeng Yu and
+                  Amin Vahdat},
+  title        = {Design and Evaluation of a Conit-Based Continuous Consistency Model
+                  for Replicated Services},
+  journal      = {{ACM} Trans. Comput. Syst.},
+  volume       = {20},
+  number       = {3},
+  pages        = {239--282},
+  year         = {2002}
+}
+
+% B6
+@article{DBLP:journals/pvldb/BailisVFHS12,
+  author       = {Peter Bailis and
+                  Shivaram Venkataraman and
+                  Michael J. Franklin and
+                  Joseph M. Hellerstein and
+                  Ion Stoica},
+  title        = {Probabilistically Bounded Staleness for Practical Partial Quorums},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {5},
+  number       = {8},
+  pages        = {776--787},
+  year         = {2012}
+}
+
+% B7
+@inproceedings{DBLP:conf/ppopp/RinbergSBHKRS20,
+  author       = {Arik Rinberg and
+                  Alexander Spiegelman and
+                  Edward Bortnikov and
+                  Eshcar Hillel and
+                  Idit Keidar and
+                  Lee Rhodes and
+                  Hadar Serviansky},
+  title        = {Fast Concurrent Data Sketches},
+  booktitle    = {Proc. {PPoPP}'20},
+  pages        = {117--129},
+  publisher    = {{ACM}},
+  year         = {2020}
+}
+
+% B8
+@inproceedings{DBLP:conf/disc/RinbergK20,
+  author       = {Arik Rinberg and
+                  Idit Keidar},
+  title        = {Intermediate Value Linearizability: {A} Quantitative Correctness Criterion},
+  booktitle    = {Proc. {DISC}'20},
+  series       = {LIPIcs},
+  volume       = {179},
+  pages        = {2:1--2:17},
+  publisher    = {Schloss Dagstuhl - Leibniz-Zentrum f{\"{u}}r Informatik},
+  year         = {2020}
+}
+
+% B9
+@article{DBLP:journals/pvldb/WangTKZZX23,
+  author       = {Congying Wang and
+                  Nithin Sastry Tellapuri and
+                  Sphoorthi Keshannagari and
+                  Dylan Zinsley and
+                  Zhuoyue Zhao and
+                  Dong Xie},
+  title        = {Approximate Queries over Concurrent Updates},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {16},
+  number       = {12},
+  pages        = {3986--3989},
+  year         = {2023}
+}
+
+% B10
+@article{DBLP:journals/corr/abs-1804-01018,
+  author       = {Dan Alistarh and
+                  Trevor Brown and
+                  Justin Kopinsky and
+                  Jerry Z. Li and
+                  Giorgi Nadiradze},
+  title        = {Distributionally Linearizable Data Structures},
+  journal      = {CoRR},
+  volume       = {abs/1804.01018},
+  year         = {2018},
+  eprinttype    = {arXiv}
+}
+
+% C1
+@inproceedings{DBLP:conf/sigmod/Guttman84,
+  author       = {Antonin Guttman},
+  title        = {{R}-Trees: {A} Dynamic Index Structure for Spatial Searching},
+  booktitle    = {Proc. {SIGMOD}'84},
+  pages        = {47--57},
+  publisher    = {{ACM}},
+  year         = {1984}
+}
+
+% C2
+@inproceedings{DBLP:conf/vldb/HellersteinNP95,
+  author       = {Joseph M. Hellerstein and
+                  Jeffrey F. Naughton and
+                  Avi Pfeffer},
+  title        = {Generalized Search Trees for Database Systems},
+  booktitle    = {Proc. {VLDB}'95},
+  pages        = {562--573},
+  publisher    = {Morgan Kaufmann},
+  year         = {1995}
+}
+
+% C3
+@inproceedings{DBLP:conf/vldb/KornackerB95,
+  author       = {Marcel Kornacker and
+                  Douglas Banks},
+  title        = {High-Concurrency Locking in {R}-Trees},
+  booktitle    = {Proc. {VLDB}'95},
+  pages        = {134--145},
+  publisher    = {Morgan Kaufmann},
+  year         = {1995}
+}
+
+% C4
+@inproceedings{DBLP:conf/sigmod/KornackerMH97,
+  author       = {Marcel Kornacker and
+                  C. Mohan and
+                  Joseph M. Hellerstein},
+  title        = {Concurrency and Recovery in Generalized Search Trees},
+  booktitle    = {Proc. {SIGMOD}'97},
+  pages        = {62--72},
+  publisher    = {{ACM}},
+  year         = {1997}
+}
+
+% C5
+@inproceedings{DBLP:conf/icde/ChakrabartiM98,
+  author       = {Kaushik Chakrabarti and
+                  Sharad Mehrotra},
+  title        = {Dynamic Granular Locking Approach to Phantom Protection in {R}-Trees},
+  booktitle    = {Proc. {ICDE}'98},
+  pages        = {446--454},
+  publisher    = {{IEEE} Computer Society},
+  year         = {1998}
+}
+
+% C6
+@inproceedings{DBLP:conf/sigmod/ChakrabartiM99,
+  author       = {Kaushik Chakrabarti and
+                  Sharad Mehrotra},
+  title        = {Efficient Concurrency Control in Multidimensional Access Methods},
+  booktitle    = {Proc. {SIGMOD}'99},
+  pages        = {25--36},
+  publisher    = {{ACM}},
+  year         = {1999}
+}
+
+% C7
+@inproceedings{DBLP:conf/dasfaa/SongLKY05,
+  author       = {Seok Il Song and
+                  Seok Jae Lee and
+                  Tae Ho Kang and
+                  Jae Soo Yoo},
+  title        = {An Efficient Phantom Protection Method for Multi-dimensional Index
+                  Structures},
+  booktitle    = {Proc. {DASFAA}'05},
+  series       = {Lecture Notes in Computer Science},
+  volume       = {3453},
+  pages        = {875--887},
+  publisher    = {Springer},
+  year         = {2005}
+}
+
+% C8
+@article{DBLP:journals/ijoc/LeeSY07,
+  author       = {Seok Jae Lee and
+                  Seok Il Song and
+                  Jae Soo Yoo},
+  title        = {Phantom Protection Method for Multi-dimensional Index Structures},
+  journal      = {International Journal of Contents},
+  volume       = {3},
+  number       = {2},
+  pages        = {6--17},
+  year         = {2007}
+}
+
+% C9
+@techreport{Chatterjee2015Concurrent,
+  author       = {Bapi Chatterjee and
+                  Ivan Walulya and
+                  Philippas Tsigas},
+  title        = {Concurrent Linearizable Nearest Neighbour Search in {LockFree-kD-tree}},
+  institution  = {Department of Computer Science and Engineering, Chalmers University
+                  of Technology and G{\"{o}}teborg University},
+  number       = {2015-08},
+  year         = {2015},
+  url          = {https://research.chalmers.se/en/publication/232185}
+}
+
+% C10
+@inproceedings{DBLP:conf/spaa/ManoharWB25,
+  author       = {Magdalen Dobson Manohar and
+                  Yuanhao Wei and
+                  Guy E. Blelloch},
+  title        = {{CLEANN}: Lock-Free Augmented Trees for Low-Dimensional k-Nearest
+                  Neighbor Search},
+  booktitle    = {Proc. {SPAA}'25},
+  pages        = {131--143},
+  publisher    = {{ACM}},
+  year         = {2025}
+}
+
+% C11
+@phdthesis{Manohar2025New,
+  author       = {Magdalen Dobson Manohar},
+  title        = {New Techniques for Parallelism and Concurrency in Nearest Neighbor
+                  Search},
+  school       = {Carnegie Mellon University},
+  number       = {CMU-CS-25-100},
+  year         = {2025}
+}
+
+% D1
+@inproceedings{DBLP:conf/sigmod/RoussopoulosKV95,
+  author       = {Nick Roussopoulos and
+                  Stephen Kelley and
+                  Fr{\'{e}}d{\'{e}}ric Vincent},
+  title        = {Nearest Neighbor Queries},
+  booktitle    = {Proc. {SIGMOD}'95},
+  pages        = {71--79},
+  publisher    = {{ACM}},
+  year         = {1995}
+}
+
+% D2
+@article{DBLP:journals/tods/HjaltasonS99,
+  author       = {G{\'{\i}}sli R. Hjaltason and
+                  Hanan Samet},
+  title        = {Distance Browsing in Spatial Databases},
+  journal      = {{ACM} Trans. Database Syst.},
+  volume       = {24},
+  number       = {2},
+  pages        = {265--318},
+  year         = {1999}
+}
+
+% D3
+@inproceedings{DBLP:conf/stoc/IndykM98,
+  author       = {Piotr Indyk and
+                  Rajeev Motwani},
+  title        = {Approximate Nearest Neighbors: Towards Removing the Curse of Dimensionality},
+  booktitle    = {Proc. {STOC}'98},
+  pages        = {604--613},
+  publisher    = {{ACM}},
+  year         = {1998}
+}
+
+% D4
+@inproceedings{DBLP:conf/icdt/BeyerGRS99,
+  author       = {Kevin S. Beyer and
+                  Jonathan Goldstein and
+                  Raghu Ramakrishnan and
+                  Uri Shaft},
+  title        = {When Is ``Nearest Neighbor'' Meaningful?},
+  booktitle    = {Proc. {ICDT}'99},
+  series       = {Lecture Notes in Computer Science},
+  volume       = {1540},
+  pages        = {217--235},
+  publisher    = {Springer},
+  year         = {1999}
+}
+
+% D5
+@article{DBLP:journals/csur/IlyasBS08,
+  author       = {Ihab F. Ilyas and
+                  George Beskales and
+                  Mohamed A. Soliman},
+  title        = {A Survey of Top-k Query Processing Techniques in Relational Database
+                  Systems},
+  journal      = {{ACM} Comput. Surv.},
+  volume       = {40},
+  number       = {4},
+  pages        = {1--58},
+  year         = {2008}
+}
+
+% D6
+@inproceedings{DBLP:conf/pods/FaginLN01,
+  author       = {Ronald Fagin and
+                  Amnon Lotem and
+                  Moni Naor},
+  title        = {Optimal Aggregation Algorithms for Middleware},
+  booktitle    = {Proc. {PODS}'01},
+  pages        = {102--113},
+  publisher    = {{ACM}},
+  year         = {2001}
+}
+
+% D7
+@inproceedings{DBLP:conf/sigmod/KornM00,
+  author       = {Flip Korn and
+                  S. Muthukrishnan},
+  title        = {Influence Sets Based on Reverse Nearest Neighbor Queries},
+  booktitle    = {Proc. {SIGMOD}'00},
+  pages        = {201--212},
+  publisher    = {{ACM}},
+  year         = {2000}
+}
+
+% D8
+@inproceedings{DBLP:conf/vldb/TaoPL04,
+  author       = {Yufei Tao and
+                  Dimitris Papadias and
+                  Xiang Lian},
+  title        = {Reverse {kNN} Search in Arbitrary Dimensionality},
+  booktitle    = {Proc. {VLDB}'04},
+  pages        = {744--755},
+  publisher    = {Morgan Kaufmann},
+  year         = {2004}
+}
+
+%% ---------------------------------------------------------------------
+%% D (part 2); E. ANN indexes, quantization, dynamic updates (part 1)
+%% ---------------------------------------------------------------------
+
+% D9
+@inproceedings{DBLP:conf/cikm/SinghFT03,
+  author       = {Amit Singh and
+                  Hakan Ferhatosmanoglu and
+                  Ali {\c{S}}aman Tosun},
+  title        = {High Dimensional Reverse Nearest Neighbor Queries},
+  booktitle    = {Proc. {CIKM}'03},
+  pages        = {91--98},
+  publisher    = {{ACM}},
+  year         = {2003}
+}
+
+% D10
+@article{DBLP:journals/corr/abs-1011-4955,
+  author       = {David Arthur and
+                  Steve Y. Oudot},
+  title        = {Reverse Nearest Neighbors Search in High Dimensions using Locality-Sensitive Hashing},
+  journal      = {CoRR},
+  volume       = {abs/1011.4955},
+  year         = {2010},
+  eprinttype    = {arXiv}
+}
+
+% D11
+@article{DBLP:journals/pvldb/CasanovaEHKNSZ17,
+  author       = {Guillaume Casanova and
+                  Elias Englmeier and
+                  Michael E. Houle and
+                  Peer Kr{\"{o}}ger and
+                  Michael Nett and
+                  Erich Schubert and
+                  Arthur Zimek},
+  title        = {Dimensional Testing for Reverse k-Nearest Neighbor Search},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {10},
+  number       = {7},
+  pages        = {769--780},
+  year         = {2017}
+}
+
+% D12
+@article{DBLP:journals/corr/abs-2606-03225,
+  author       = {Wenxuan Xia and
+                  Wentao Li and
+                  Mingyu Yang and
+                  Wei Wang},
+  title        = {{HRNN}: {A} Hybrid Graph Index for Approximate Reverse k-Nearest Neighbor Search on High-Dimensional Vectors},
+  journal      = {CoRR},
+  volume       = {abs/2606.03225},
+  year         = {2026},
+  eprinttype    = {arXiv}
+}
+
+% D13
+@inproceedings{DBLP:conf/sigmod/MouratidisHP05,
+  author       = {Kyriakos Mouratidis and
+                  Marios Hadjieleftheriou and
+                  Dimitris Papadias},
+  title        = {Conceptual Partitioning: An Efficient Method for Continuous Nearest Neighbor Monitoring},
+  booktitle    = {Proc. {SIGMOD}'05},
+  pages        = {634--645},
+  publisher    = {{ACM}},
+  year         = {2005}
+}
+
+% D14
+@inproceedings{DBLP:conf/icde/YuPK05,
+  author       = {Xiaohui Yu and
+                  Ken Q. Pu and
+                  Nick Koudas},
+  title        = {Monitoring k-Nearest Neighbor Queries over Moving Objects},
+  booktitle    = {Proc. {ICDE}'05},
+  pages        = {631--642},
+  publisher    = {{IEEE} Computer Society},
+  year         = {2005}
+}
+
+% D15
+@inproceedings{DBLP:conf/icde/XiongMA05,
+  author       = {Xiaopeng Xiong and
+                  Mohamed F. Mokbel and
+                  Walid G. Aref},
+  title        = {{SEA-CNN}: Scalable Processing of Continuous K-Nearest Neighbor Queries in Spatio-temporal Databases},
+  booktitle    = {Proc. {ICDE}'05},
+  pages        = {643--654},
+  publisher    = {{IEEE} Computer Society},
+  year         = {2005}
+}
+
+% D16
+@inproceedings{DBLP:conf/icde/BohmOPY07,
+  author       = {Christian B{\"{o}}hm and
+                  Beng Chin Ooi and
+                  Claudia Plant and
+                  Ying Yan},
+  title        = {Efficiently Processing Continuous k-{NN} Queries on Data Streams},
+  booktitle    = {Proc. {ICDE}'07},
+  pages        = {156--165},
+  publisher    = {{IEEE} Computer Society},
+  year         = {2007}
+}
+
+% D17
+@inproceedings{DBLP:conf/cidr/LuFZSSC25,
+  author       = {Duo Lu and
+                  Siming Feng and
+                  Jonathan Zhou and
+                  Franco Solleza and
+                  Malte Schwarzkopf and
+                  U{\u{g}}ur {\c{C}}etintemel},
+  title        = {{VectraFlow}: Integrating Vectors into Stream Processing},
+  booktitle    = {Proc. {CIDR}'25},
+  publisher    = {www.cidrdb.org},
+  year         = {2025},
+  url          = {https://vldb.org/cidrdb/2025/vectraflow-integrating-vectors-into-stream-processing.html}
+}
+
+% D18
+@article{DBLP:journals/tkde/ElmagarmidIV07,
+  author       = {Ahmed K. Elmagarmid and
+                  Panagiotis G. Ipeirotis and
+                  Vassilios S. Verykios},
+  title        = {Duplicate Record Detection: {A} Survey},
+  journal      = {{IEEE} Trans. Knowl. Data Eng.},
+  volume       = {19},
+  number       = {1},
+  pages        = {1--16},
+  year         = {2007}
+}
+
+% D19
+@inproceedings{DBLP:conf/icde/ChaudhuriGK06,
+  author       = {Surajit Chaudhuri and
+                  Venkatesh Ganti and
+                  Raghav Kaushik},
+  title        = {A Primitive Operator for Similarity Joins in Data Cleaning},
+  booktitle    = {Proc. {ICDE}'06},
+  pages        = {5},
+  publisher    = {{IEEE} Computer Society},
+  year         = {2006}
+}
+
+% D20
+@inproceedings{DBLP:conf/icdt/KaminskyKLNW25,
+  author       = {Youri Kaminsky and
+                  Benny Kimelfeld and
+                  Ester Livshits and
+                  Felix Naumann and
+                  David Wajc},
+  title        = {Repairing Databases over Metric Spaces with Coincidence Constraints},
+  booktitle    = {Proc. {ICDT}'25},
+  series       = {LIPIcs},
+  volume       = {328},
+  pages        = {14:1--14:18},
+  publisher    = {Schloss Dagstuhl - Leibniz-Zentrum f{\"{u}}r Informatik},
+  year         = {2025}
+}
+
+% E1
+@article{DBLP:journals/pami/MalkovY20,
+  author       = {Yu. A. Malkov and
+                  D. A. Yashunin},
+  title        = {Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Navigable Small World Graphs},
+  journal      = {{IEEE} Trans. Pattern Anal. Mach. Intell.},
+  volume       = {42},
+  number       = {4},
+  pages        = {824--836},
+  year         = {2020}
+}
+
+% E2
+@article{DBLP:journals/is/MalkovPLK14,
+  author       = {Yury Malkov and
+                  Alexander Ponomarenko and
+                  Andrey Logvinov and
+                  Vladimir Krylov},
+  title        = {Approximate nearest neighbor algorithm based on navigable small world graphs},
+  journal      = {Inf. Syst.},
+  volume       = {45},
+  pages        = {61--68},
+  year         = {2014}
+}
+
+% E3
+@inproceedings{DBLP:conf/nips/SubramanyaDSKK19,
+  author       = {Suhas Jayaram Subramanya and
+                  Fnu Devvrit and
+                  Harsha Vardhan Simhadri and
+                  Ravishankar Krishnaswamy and
+                  Rohan Kadekodi},
+  title        = {{DiskANN}: Fast Accurate Billion-point Nearest Neighbor Search on a Single Node},
+  booktitle    = {Advances in Neural Information Processing Systems 32 (NeurIPS 2019)},
+  year         = {2019}
+}
+
+% E4
+@article{DBLP:journals/pvldb/FuXWC19,
+  author       = {Cong Fu and
+                  Chao Xiang and
+                  Changxu Wang and
+                  Deng Cai},
+  title        = {Fast Approximate Nearest Neighbor Search With The Navigating Spreading-out Graph},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {12},
+  number       = {5},
+  pages        = {461--474},
+  year         = {2019}
+}
+
+% E5
+@article{DBLP:journals/pami/JegouDS11,
+  author       = {Herv{\'{e}} J{\'{e}}gou and
+                  Matthijs Douze and
+                  Cordelia Schmid},
+  title        = {Product Quantization for Nearest Neighbor Search},
+  journal      = {{IEEE} Trans. Pattern Anal. Mach. Intell.},
+  volume       = {33},
+  number       = {1},
+  pages        = {117--128},
+  year         = {2011}
+}
+
+% E6
+@article{DBLP:journals/tbd/JohnsonDJ21,
+  author       = {Jeff Johnson and
+                  Matthijs Douze and
+                  Herv{\'{e}} J{\'{e}}gou},
+  title        = {Billion-Scale Similarity Search with {GPU}s},
+  journal      = {{IEEE} Trans. Big Data},
+  volume       = {7},
+  number       = {3},
+  pages        = {535--547},
+  year         = {2021}
+}
+
+% E7
+@article{DBLP:journals/tbd/DouzeGDJSMLHJ26,
+  author       = {Matthijs Douze and
+                  Alexandr Guzhva and
+                  Chengqi Deng and
+                  Jeff Johnson and
+                  Gergely Szilvasy and
+                  Pierre{-}Emmanuel Mazar{\'{e}} and
+                  Maria Lomeli and
+                  Lucas Hosseini and
+                  Herv{\'{e}} J{\'{e}}gou},
+  title        = {The {Faiss} Library},
+  journal      = {{IEEE} Trans. Big Data},
+  volume       = {12},
+  number       = {2},
+  pages        = {346--361},
+  year         = {2026}
+}
+
+% E8
+@inproceedings{DBLP:conf/cvpr/BabenkoL12,
+  author       = {Artem Babenko and
+                  Victor Lempitsky},
+  title        = {The Inverted Multi-Index},
+  booktitle    = {Proc. {CVPR}'12},
+  pages        = {3069--3076},
+  publisher    = {{IEEE} Computer Society},
+  year         = {2012}
+}
+
+% E9
+@inproceedings{DBLP:conf/nips/ChenZWLLLYW21,
+  author       = {Qi Chen and
+                  Bing Zhao and
+                  Haidong Wang and
+                  Mingqin Li and
+                  Chuanjie Liu and
+                  Zengzhong Li and
+                  Mao Yang and
+                  Jingdong Wang},
+  title        = {{SPANN}: Highly-efficient Billion-scale Approximate Nearest Neighborhood Search},
+  booktitle    = {Advances in Neural Information Processing Systems 34 (NeurIPS 2021)},
+  pages        = {5199--5212},
+  year         = {2021}
+}
+
+% E10
+@article{DBLP:journals/pacmmod/GaoL24,
+  author       = {Jianyang Gao and
+                  Cheng Long},
+  title        = {{RaBitQ}: Quantizing High-Dimensional Vectors with a Theoretical Error Bound for Approximate Nearest Neighbor Search},
+  journal      = {Proc. {ACM} Manag. Data},
+  volume       = {2},
+  number       = {3},
+  pages        = {167:1--167:27},
+  year         = {2024}
+}
+
+% E11
+@article{DBLP:journals/pacmmod/GaoGXYLW25,
+  author       = {Jianyang Gao and
+                  Yutong Gou and
+                  Yuexuan Xu and
+                  Yongyi Yang and
+                  Cheng Long and
+                  Raymond Chi{-}Wing Wong},
+  title        = {Practical and Asymptotically Optimal Quantization of High-Dimensional Vectors in {E}uclidean Space for Approximate Nearest Neighbor Search},
+  journal      = {Proc. {ACM} Manag. Data},
+  volume       = {3},
+  number       = {3},
+  pages        = {202:1--202:26},
+  year         = {2025}
+}
+
+% E12
+@article{DBLP:journals/pvldb/WangXYW21,
+  author       = {Mengzhao Wang and
+                  Xiaoliang Xu and
+                  Qiang Yue and
+                  Yuxiang Wang},
+  title        = {A Comprehensive Survey and Experimental Comparison of Graph-Based Approximate Nearest Neighbor Search},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {14},
+  number       = {11},
+  pages        = {1964--1978},
+  year         = {2021}
+}
+
+% E13
+@article{DBLP:journals/tkde/LiZSWLZL20,
+  author       = {Wen Li and
+                  Ying Zhang and
+                  Yifang Sun and
+                  Wei Wang and
+                  Mingjie Li and
+                  Wenjie Zhang and
+                  Xuemin Lin},
+  title        = {Approximate Nearest Neighbor Search on High Dimensional Data --- Experiments, Analyses, and Improvement},
+  journal      = {{IEEE} Trans. Knowl. Data Eng.},
+  volume       = {32},
+  number       = {8},
+  pages        = {1475--1488},
+  year         = {2020}
+}
+
+% E14
+@inproceedings{DBLP:conf/nips/DiwanGMMS24,
+  author       = {Haya Diwan and
+                  Jinrui Gou and
+                  Cameron Musco and
+                  Christopher Musco and
+                  Torsten Suel},
+  title        = {Navigable Graphs for High-Dimensional Nearest Neighbor Search: Constructions and Limits},
+  booktitle    = {Advances in Neural Information Processing Systems 37 (NeurIPS 2024)},
+  pages        = {59513--59531},
+  year         = {2024}
+}
+
+%% ---------------------------------------------------------------------
+%% E (part 2); F. Vector database systems (part 1)
+%% ---------------------------------------------------------------------
+
+% E15
+@inproceedings{DBLP:conf/nips/IndykX23,
+  author       = {Piotr Indyk and
+                  Haike Xu},
+  title        = {Worst-case Performance of Popular Approximate Nearest Neighbor Search Implementations: Guarantees and Limitations},
+  booktitle    = {Advances in Neural Information Processing Systems 36 (NeurIPS 2023)},
+  pages        = {66239--66256},
+  year         = {2023}
+}
+
+% E16
+@article{DBLP:journals/pvldb/WangWCWPW24,
+  author       = {Zeyu Wang and
+                  Qitong Wang and
+                  Xiaoxing Cheng and
+                  Peng Wang and
+                  Themis Palpanas and
+                  Wei Wang},
+  title        = {Steiner-Hardness: {A} Query Hardness Measure for Graph-Based {ANN} Indexes},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {17},
+  number       = {13},
+  pages        = {4668--4682},
+  year         = {2024}
+}
+
+% E17
+@inproceedings{DBLP:conf/sigmod/LiZAH20,
+  author       = {Conglong Li and
+                  Minjia Zhang and
+                  David G. Andersen and
+                  Yuxiong He},
+  title        = {Improving Approximate Nearest Neighbor Search through Learned Adaptive Early Termination},
+  booktitle    = {Proc. {SIGMOD}'20},
+  pages        = {2539--2554},
+  publisher    = {{ACM}},
+  year         = {2020}
+}
+
+% E18
+@article{DBLP:journals/pacmmod/ChatzakisPP25,
+  author       = {Manos Chatzakis and
+                  Yannis Papakonstantinou and
+                  Themis Palpanas},
+  title        = {{DARTH}: Declarative Recall Through Early Termination for Approximate Nearest Neighbor Search},
+  journal      = {Proc. {ACM} Manag. Data},
+  volume       = {3},
+  number       = {4},
+  pages        = {242:1--242:26},
+  year         = {2025}
+}
+
+% E19
+@article{DBLP:journals/pvldb/HorchidanZBC25,
+  author       = {Sonia Horchidan and
+                  Fabian Zeiher and
+                  Henrik Bostr{\"{o}}m and
+                  Paris Carbone},
+  title        = {{ConANN}: Conformal Approximate Nearest Neighbor Search},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {19},
+  number       = {1},
+  pages        = {29--42},
+  year         = {2025}
+}
+
+% E20
+@article{DBLP:journals/pacmmod/PatelKGZ24,
+  author       = {Liana Patel and
+                  Peter Kraft and
+                  Carlos Guestrin and
+                  Matei Zaharia},
+  title        = {{ACORN}: Performant and Predicate-Agnostic Search Over Vector Embeddings and Structured Data},
+  journal      = {Proc. {ACM} Manag. Data},
+  volume       = {2},
+  number       = {3},
+  pages        = {120:1--120:27},
+  year         = {2024}
+}
+
+% E21
+@inproceedings{DBLP:conf/www/GollapudiKSKBRLZMSSS23,
+  author       = {Siddharth Gollapudi and
+                  Neel Karia and
+                  Varun Sivashankar and
+                  Ravishankar Krishnaswamy and
+                  Nikit Begwani and
+                  Swapnil Raz and
+                  Yiyong Lin and
+                  Yin Zhang and
+                  Neelam Mahapatro and
+                  Premkumar Srinivasan and
+                  Amit Singh and
+                  Harsha Vardhan Simhadri},
+  title        = {Filtered-{DiskANN}: Graph Algorithms for Approximate Nearest Neighbor Search with Filters},
+  booktitle    = {Proc. {WWW}'23},
+  pages        = {3406--3416},
+  publisher    = {{ACM}},
+  year         = {2023}
+}
+
+% E22
+@inproceedings{DBLP:conf/ppopp/ManoharSBDGSS24,
+  author       = {Magdalen Dobson Manohar and
+                  Zheqi Shen and
+                  Guy Blelloch and
+                  Laxman Dhulipala and
+                  Yan Gu and
+                  Harsha Vardhan Simhadri and
+                  Yihan Sun},
+  title        = {{ParlayANN}: Scalable and Deterministic Parallel Graph-Based Approximate Nearest Neighbor Search Algorithms},
+  booktitle    = {Proc. {PPoPP}'24},
+  pages        = {270--285},
+  publisher    = {{ACM}},
+  year         = {2024}
+}
+
+% E23
+@inproceedings{DBLP:conf/icde/OotomoNNWFW24,
+  author       = {Hiroyuki Ootomo and
+                  Akira Naruse and
+                  Corey Nolet and
+                  Ray Wang and
+                  Tamas Feher and
+                  Yong Wang},
+  title        = {{CAGRA}: Highly Parallel Graph Construction and Approximate Nearest Neighbor Search for {GPU}s},
+  booktitle    = {Proc. {ICDE}'24},
+  pages        = {4236--4247},
+  publisher    = {{IEEE}},
+  year         = {2024}
+}
+
+% E24
+@article{DBLP:journals/corr/abs-2105-09613,
+  author       = {Aditi Singh and
+                  Suhas Jayaram Subramanya and
+                  Ravishankar Krishnaswamy and
+                  Harsha Vardhan Simhadri},
+  title        = {{FreshDiskANN}: {A} Fast and Accurate Graph-Based {ANN} Index for Streaming Similarity Search},
+  journal      = {CoRR},
+  volume       = {abs/2105.09613},
+  year         = {2021},
+  eprinttype    = {arXiv}
+}
+
+% E25
+@inproceedings{DBLP:conf/sosp/XuLLXCZLYYYCY23,
+  author       = {Yuming Xu and
+                  Hengyu Liang and
+                  Jin Li and
+                  Shuotao Xu and
+                  Qi Chen and
+                  Qianxi Zhang and
+                  Cheng Li and
+                  Ziyue Yang and
+                  Fan Yang and
+                  Yuqing Yang and
+                  Peng Cheng and
+                  Mao Yang},
+  title        = {{SPFresh}: Incremental In-Place Update for Billion-Scale Vector Search},
+  booktitle    = {Proc. {SOSP}'23},
+  pages        = {545--561},
+  publisher    = {{ACM}},
+  year         = {2023}
+}
+
+% E26
+@article{DBLP:journals/corr/abs-2502-13826,
+  author       = {Haike Xu and
+                  Magdalen Dobson Manohar and
+                  Philip A. Bernstein and
+                  Badrish Chandramouli and
+                  Richard Wen and
+                  Harsha Vardhan Simhadri},
+  title        = {In-Place Updates of a Graph Index for Streaming Approximate Nearest Neighbor Search},
+  journal      = {CoRR},
+  volume       = {abs/2502.13826},
+  year         = {2025},
+  eprinttype    = {arXiv}
+}
+
+% E27
+@inproceedings{DBLP:conf/fast/GuoL26,
+  author       = {Hao Guo and
+                  Youyou Lu},
+  title        = {{OdinANN}: Direct Insert for Consistently Stable Performance in Billion-Scale Graph-Based Vector Search},
+  booktitle    = {Proc. {FAST}'26},
+  pages        = {133--147},
+  publisher    = {{USENIX} Association},
+  year         = {2026}
+}
+
+% E28
+@article{DBLP:journals/pvldb/YuLGXLZSZLY25,
+  author       = {Song Yu and
+                  Shengyuan Lin and
+                  Shufeng Gong and
+                  Yongqing Xie and
+                  Ruicheng Liu and
+                  Yijie Zhou and
+                  Ji Sun and
+                  Yanfeng Zhang and
+                  Guoliang Li and
+                  Ge Yu},
+  title        = {A Topology-Aware Localized Update Strategy for Graph-Based {ANN} Index},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {19},
+  number       = {3},
+  pages        = {495--508},
+  year         = {2025}
+}
+
+% E29
+@article{DBLP:journals/corr/abs-2411-00970,
+  author       = {Jason Mohoney and
+                  Anil Pacaci and
+                  Shihabur Rahman Chowdhury and
+                  Umar Farooq Minhas and
+                  Jeffery Pound and
+                  Cedric Renggli and
+                  Nima Reyhani and
+                  Ihab F. Ilyas and
+                  Theodoros Rekatsinas and
+                  Shivaram Venkataraman},
+  title        = {Incremental {IVF} Index Maintenance for Streaming Vector Search},
+  journal      = {CoRR},
+  volume       = {abs/2411.00970},
+  year         = {2024},
+  eprinttype    = {arXiv}
+}
+
+% E30
+@inproceedings{DBLP:conf/osdi/MohoneySTCPIRV25,
+  author       = {Jason Mohoney and
+                  Devesh Sarda and
+                  Mengze Tang and
+                  Shihabur Rahman Chowdhury and
+                  Anil Pacaci and
+                  Ihab F. Ilyas and
+                  Theodoros Rekatsinas and
+                  Shivaram Venkataraman},
+  title        = {Quake: Adaptive Indexing for Vector Search},
+  booktitle    = {Proc. {OSDI}'25},
+  pages        = {153--169},
+  publisher    = {{USENIX} Association},
+  year         = {2025}
+}
+
+% E31
+@article{DBLP:journals/corr/abs-2407-07871,
+  author       = {Wentao Xiao and
+                  Yueyang Zhan and
+                  Rui Xi and
+                  Mengshu Hou and
+                  Jianming Liao},
+  title        = {Enhancing {HNSW} Index for Real-Time Updates: Addressing Unreachable Points and Performance Degradation},
+  journal      = {CoRR},
+  volume       = {abs/2407.07871},
+  year         = {2024},
+  eprinttype    = {arXiv}
+}
+
+% E32
+@article{DBLP:journals/corr/abs-2507-19802,
+  author       = {Ziyu Zhang and
+                  Yuanhao Wei and
+                  Joshua Engels and
+                  Julian Shun},
+  title        = {{CleANN}: Efficient Full Dynamism in Graph-based Approximate Nearest Neighbor Search},
+  journal      = {CoRR},
+  volume       = {abs/2507.19802},
+  year         = {2025},
+  eprinttype    = {arXiv}
+}
+
+% E33
+@inproceedings{DBLP:conf/icde/WangHTZZ25,
+  author       = {Yuxiang Wang and
+                  Ziyuan He and
+                  Yongxin Tong and
+                  Zimu Zhou and
+                  Yiman Zhong},
+  title        = {Timestamp Approximate Nearest Neighbor Search over High-Dimensional Vector Data},
+  booktitle    = {Proc. {ICDE}'25},
+  pages        = {3043--3055},
+  publisher    = {{IEEE}},
+  year         = {2025}
+}
+
+% E34
+@article{DBLP:journals/corr/abs-2608-27663,
+  author       = {Jun Woo Chung and
+                  Weijie Zhao},
+  title        = {A Versioned Unified Graph Index for Dynamic Timestamp-Aware Nearest Neighbor Search},
+  journal      = {CoRR},
+  volume       = {abs/2608.27663},
+  year         = {2026},
+  eprinttype    = {arXiv}
+}
+
+% F1
+@inproceedings{DBLP:conf/sigmod/WangYGJXLWGLXYYZLCLZMGJWX21,
+  author       = {Jianguo Wang and
+                  Xiaomeng Yi and
+                  Rentong Guo and
+                  Hai Jin and
+                  Peng Xu and
+                  Shengjun Li and
+                  Xiangyu Wang and
+                  Xiangzhou Guo and
+                  Chengming Li and
+                  Xiaohai Xu and
+                  Kun Yu and
+                  Yuxing Yuan and
+                  Yinghao Zou and
+                  Jiquan Long and
+                  Yudong Cai and
+                  Zhenxiang Li and
+                  Zhifeng Zhang and
+                  Yihua Mo and
+                  Jun Gu and
+                  Ruiyi Jiang and
+                  Yi Wei and
+                  Charles Xie},
+  title        = {Milvus: {A} Purpose-Built Vector Data Management System},
+  booktitle    = {Proc. {SIGMOD}'21},
+  pages        = {2614--2627},
+  publisher    = {{ACM}},
+  year         = {2021}
+}
+
+% F2
+@article{DBLP:journals/pvldb/GuoLXYYLCXLLCQWTX22,
+  author       = {Rentong Guo and
+                  Xiaofan Luan and
+                  Long Xiang and
+                  Xiao Yan and
+                  Xiaomeng Yi and
+                  Jigao Luo and
+                  Qianya Cheng and
+                  Weizhi Xu and
+                  Jiarui Luo and
+                  Frank Liu and
+                  Zhenshan Cao and
+                  Yanliang Qiao and
+                  Ting Wang and
+                  Bo Tang and
+                  Charles Xie},
+  title        = {Manu: {A} Cloud Native Vector Database Management System},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {15},
+  number       = {12},
+  pages        = {3548--3561},
+  year         = {2022}
+}
+
+% F3
+@inproceedings{DBLP:conf/osdi/ZhangXCSXCCHYYYZ23,
+  author       = {Qianxi Zhang and
+                  Shuotao Xu and
+                  Qi Chen and
+                  Guoxin Sui and
+                  Jiadong Xie and
+                  Zhizhen Cai and
+                  Yaoqi Chen and
+                  Yinxuan He and
+                  Yuqing Yang and
+                  Fan Yang and
+                  Mao Yang and
+                  Lidong Zhou},
+  title        = {{VBASE}: Unifying Online Vector Similarity Search and Relational Queries via Relaxed Monotonicity},
+  booktitle    = {Proc. {OSDI}'23},
+  pages        = {377--395},
+  publisher    = {{USENIX} Association},
+  year         = {2023}
+}
+
+% F4
+@article{DBLP:journals/pvldb/WeiWWLZLC20,
+  author       = {Chuangxian Wei and
+                  Bin Wu and
+                  Sheng Wang and
+                  Renjie Lou and
+                  Chaoqun Zhan and
+                  Feifei Li and
+                  Yuanzhe Cai},
+  title        = {{AnalyticDB-V}: {A} Hybrid Analytical Engine Towards Query Fusion for Structured and Unstructured Data},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {13},
+  number       = {12},
+  pages        = {3152--3165},
+  year         = {2020}
+}
+
+% F5
+@inproceedings{DBLP:conf/sigmod/YangLFW20,
+  author       = {Wen Yang and
+                  Tao Li and
+                  Gai Fang and
+                  Hong Wei},
+  title        = {{PASE}: {PostgreSQL} Ultra-High-Dimensional Approximate Nearest Neighbor Search Extension},
+  booktitle    = {Proc. {SIGMOD}'20},
+  pages        = {2241--2253},
+  publisher    = {{ACM}},
+  year         = {2020}
+}
+
+% F6
+@article{DBLP:journals/pvldb/ChenJZPWWHSWW24,
+  author       = {Cheng Chen and
+                  Chenzhe Jin and
+                  Yunan Zhang and
+                  Sasha Podolsky and
+                  Chun Wu and
+                  Szu{-}Po Wang and
+                  Eric Hanson and
+                  Zhou Sun and
+                  Robert Walzer and
+                  Jianguo Wang},
+  title        = {{SingleStore-V}: An Integrated Vector Database System in {SingleStore}},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {17},
+  number       = {12},
+  pages        = {3772--3785},
+  year         = {2024}
+}
+
+%% ---------------------------------------------------------------------
+%% F (part 2); G. Agent memory and multi-agent concurrency (part 1)
+%% ---------------------------------------------------------------------
+
+% F7
+@inproceedings{DBLP:conf/sigmod/LiuZCARCXWW25,
+  author       = {Shige Liu and
+                  Zhifang Zeng and
+                  Li Chen and
+                  Adil Ainihaer and
+                  Arun Ramasami and
+                  Songting Chen and
+                  Yu Xu and
+                  Mingxi Wu and
+                  Jianguo Wang},
+  title        = {{TigerVector}: Supporting Vector Search in Graph Databases for Advanced {RAGs}},
+  booktitle    = {Proc. {SIGMOD} Companion'25},
+  pages        = {553--565},
+  publisher    = {{ACM}},
+  year         = {2025}
+}
+
+% F8
+@article{DBLP:journals/pvldb/SunLPWXLN25,
+  author       = {Ji Sun and
+                  Guoliang Li and
+                  James Pan and
+                  Jiang Wang and
+                  Yongqing Xie and
+                  Ruicheng Liu and
+                  Wen Nie},
+  title        = {{GaussDB-Vector}: {A} Large-Scale Persistent Real-Time Vector Database for {LLM} Applications},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {18},
+  number       = {12},
+  pages        = {4951--4963},
+  year         = {2025}
+}
+
+% F9
+@article{DBLP:journals/pvldb/UpretiSSSBPACSYHDPHMMXDGKGSVBMCCPMKKDSBFV25,
+  author       = {Nitish Upreti and
+                  Harsha Vardhan Simhadri and
+                  Hari Sudan Sundar and
+                  Krishnan Sundaram and
+                  Samer Boshra and
+                  Balachandar Perumalswamy and
+                  Shivam Atri and
+                  Martin Chisholm and
+                  Revti Raman Singh and
+                  Greg Yang and
+                  Tamara Hass and
+                  Nitesh Dudhey and
+                  Subramanyam Pattipaka and
+                  Mark Hildebrand and
+                  Magdalen Manohar and
+                  Jack Moffitt and
+                  Haiyang Xu and
+                  Naren Datha and
+                  Suryansh Gupta and
+                  Ravishankar Krishnaswamy and
+                  Prashant Gupta and
+                  Abhishek Sahu and
+                  Hemeswari Varada and
+                  Sudhanshu Barthwal and
+                  Ritika Mor and
+                  James Codella and
+                  Shaun Cooper and
+                  Kevin Pilch and
+                  Simon Moreno and
+                  Aayush Kataria and
+                  Santosh Kulkarni and
+                  Neil Deshpande and
+                  Amar Sagare and
+                  Dinesh Billa and
+                  Zishan Fu and
+                  Vipul Vishal},
+  title        = {Cost-Effective, Low Latency Vector Search with {Azure} {Cosmos} {DB}},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {18},
+  number       = {12},
+  pages        = {5166--5183},
+  year         = {2025}
+}
+
+% F10
+@inproceedings{DBLP:conf/sigmod/PoundCBGPC25,
+  author       = {Jeffrey Pound and
+                  Floris Chabert and
+                  Arjun Bhushan and
+                  Ankur Goswami and
+                  Anil Pacaci and
+                  Shihabur Rahman Chowdhury},
+  title        = {{MicroNN}: An On-device Disk-resident Updatable Vector Database},
+  booktitle    = {Proc. {SIGMOD} Companion'25},
+  pages        = {608--621},
+  publisher    = {{ACM}},
+  year         = {2025}
+}
+
+% F11
+@inproceedings{DBLP:conf/icde/NiuTPC25,
+  author       = {Zhaojie Niu and
+                  Xinhui Tian and
+                  Xindong Peng and
+                  Xing Chen},
+  title        = {{BlendHouse}: {A} Cloud-Native Vector Database System in {ByteHouse}},
+  booktitle    = {Proc. {ICDE}'25},
+  pages        = {4332--4345},
+  publisher    = {{IEEE}},
+  year         = {2025}
+}
+
+% F12
+@article{DBLP:journals/pvldb/SehgalS25,
+  author       = {Gaurav Sehgal and
+                  Semih Saliho{\u{g}}lu},
+  title        = {{NaviX}: {A} Native Vector Index Design for Graph {DBMSs} With Robust Predicate-Agnostic Search Performance},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {18},
+  number       = {11},
+  pages        = {4438--4450},
+  year         = {2025}
+}
+
+% F13
+@article{DBLP:journals/corr/abs-2505-12524,
+  author       = {Guoyu Hu and
+                  Shaofeng Cai and
+                  Tien Tuan Anh Dinh and
+                  Zhongle Xie and
+                  Cong Yue and
+                  Gang Chen and
+                  Beng Chin Ooi},
+  title        = {{HAKES}: Scalable Vector Database for Embedding Search Service},
+  journal      = {CoRR},
+  volume       = {abs/2505.12524},
+  year         = {2025},
+  eprinttype    = {arXiv}
+}
+
+% F14
+@inproceedings{DBLP:conf/icde/ZhangLW24,
+  author       = {Yunan Zhang and
+                  Shige Liu and
+                  Jianguo Wang},
+  title        = {Are There Fundamental Limitations in Supporting Vector Data Management in Relational Databases? {A} Case Study of {PostgreSQL}},
+  booktitle    = {Proc. {ICDE}'24},
+  pages        = {3640--3653},
+  publisher    = {{IEEE}},
+  year         = {2024}
+}
+
+% F15
+@inproceedings{DBLP:conf/cidr/LiuZJGLW26,
+  author       = {Jiayi Liu and
+                  Yunan Zhang and
+                  Chenzhe Jin and
+                  Aditya Gupta and
+                  Shige Liu and
+                  Jianguo Wang},
+  title        = {Fast Vector Search in {PostgreSQL}: {A} Decoupled Approach},
+  booktitle    = {Proc. {CIDR}'26},
+  publisher    = {www.cidrdb.org},
+  year         = {2026},
+  url          = {https://vldb.org/cidrdb/2026/fast-vector-search-in-postgresql-a-decoupled-approach.html}
+}
+
+% F16
+@article{DBLP:journals/corr/abs-2608-15994,
+  author       = {Jiayi Liu and
+                  Te Guo and
+                  Jianguo Wang},
+  title        = {Building An Integrated Vector Database System in {PostgreSQL}},
+  journal      = {CoRR},
+  volume       = {abs/2608.15994},
+  year         = {2026},
+  eprinttype    = {arXiv}
+}
+
+% F17
+@article{DBLP:journals/pvldb/OhKKLLZCW26,
+  author       = {Sukjoon Oh and
+                  Minki Kang and
+                  Dohyun Kim and
+                  Baotong Lu and
+                  Jing Liu and
+                  Qianxi Zhang and
+                  Qi Chen and
+                  Youjip Won},
+  title        = {{Aker}: Density-Aware Approximate Caching for Vector Search},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {19},
+  number       = {10},
+  pages        = {2727--2740},
+  year         = {2026}
+}
+
+% F18
+@article{DBLP:journals/vldb/PanWL24,
+  author       = {James Jie Pan and
+                  Jianguo Wang and
+                  Guoliang Li},
+  title        = {Survey of Vector Database Management Systems},
+  journal      = {{VLDB} J.},
+  volume       = {33},
+  number       = {5},
+  pages        = {1591--1615},
+  year         = {2024}
+}
+
+% F19
+@inproceedings{DBLP:conf/sigmod/PanWL24,
+  author       = {James Jie Pan and
+                  Jianguo Wang and
+                  Guoliang Li},
+  title        = {Vector Database Management Techniques and Systems},
+  booktitle    = {Proc. {SIGMOD} Companion'24},
+  pages        = {597--604},
+  publisher    = {{ACM}},
+  year         = {2024}
+}
+
+% F20
+@article{DBLP:journals/cogsr/Taipalus24,
+  author       = {Toni Taipalus},
+  title        = {Vector database management systems: Fundamental concepts, use-cases, and current challenges},
+  journal      = {Cogn. Syst. Res.},
+  volume       = {85},
+  pages        = {101216},
+  year         = {2024}
+}
+
+% F21
+@article{DBLP:journals/corr/abs-2402-01763,
+  author       = {Zhi Jing and
+                  Yongye Su and
+                  Yikun Han and
+                  Bo Yuan and
+                  Haiyun Xu and
+                  Chunjiang Liu and
+                  Kehai Chen and
+                  Min Zhang},
+  title        = {When Large Language Models Meet Vector Databases: {A} Survey},
+  journal      = {CoRR},
+  volume       = {abs/2402.01763},
+  year         = {2024},
+  eprinttype    = {arXiv}
+}
+
+% F22
+@article{DBLP:journals/corr/abs-2310-11703,
+  author       = {Le Ma and
+                  Ran Zhang and
+                  Yikun Han and
+                  Shirui Yu and
+                  Zaitian Wang and
+                  Zhiyuan Ning and
+                  Jinghan Zhang and
+                  Ping Xu and
+                  Pengjiang Li and
+                  Ziyue Qiao and
+                  Wei Ju and
+                  Chong Chen and
+                  Dongjie Wang and
+                  Kunpeng Liu and
+                  Pengyang Wang and
+                  Pengfei Wang and
+                  Yanjie Fu and
+                  Chunjiang Liu and
+                  Yuanchun Zhou and
+                  Chang{-}Tien Lu},
+  title        = {A Comprehensive Survey on Vector Database: Storage and Retrieval Technique, Challenge},
+  journal      = {CoRR},
+  volume       = {abs/2310.11703},
+  year         = {2023},
+  eprinttype    = {arXiv}
+}
+
+% F23
+@article{DBLP:journals/pvldb/ChronisCPOA25,
+  author       = {Yannis Chronis and
+                  Helena Caminal and
+                  Yannis Papakonstantinou and
+                  Fatma {\"{O}}zcan and
+                  Anastasia Ailamaki},
+  title        = {Filtered Vector Search: State-of-the-art and Research Opportunities},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {18},
+  number       = {12},
+  pages        = {5488--5492},
+  year         = {2025}
+}
+
+% F24
+@article{DBLP:journals/pvldb/WangHLPSX24,
+  author       = {Jianguo Wang and
+                  Eric Hanson and
+                  Guoliang Li and
+                  Yannis Papakonstantinou and
+                  Harsha Simhadri and
+                  Charles Xie},
+  title        = {Vector Databases: What's Really New and What's Next? ({VLDB} 2024 Panel)},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {17},
+  number       = {12},
+  pages        = {4505--4506},
+  year         = {2024}
+}
+
+% F25
+@article{DBLP:journals/corr/abs-2502-20812,
+  author       = {Shenao Wang and
+                  Yanjie Zhao and
+                  Yinglin Xie and
+                  Zhao Liu and
+                  Xinyi Hou and
+                  Quanchen Zou and
+                  Haoyu Wang},
+  title        = {Towards Reliable Vector Database Management Systems: {A} Software Testing Roadmap for 2030},
+  journal      = {CoRR},
+  volume       = {abs/2502.20812},
+  year         = {2025},
+  eprinttype    = {arXiv}
+}
+
+% F26
+@article{DBLP:journals/corr/abs-2506-02617,
+  author       = {Yinglin Xie and
+                  Xinyi Hou and
+                  Yanjie Zhao and
+                  Shenao Wang and
+                  Kai Chen and
+                  Haoyu Wang},
+  title        = {Toward Understanding Bugs in Vector Database Management Systems},
+  journal      = {CoRR},
+  volume       = {abs/2506.02617},
+  year         = {2025},
+  eprinttype    = {arXiv}
+}
+
+% G1
+@inproceedings{DBLP:conf/nips/LewisPPPKGKLYRRK20,
+  author       = {Patrick Lewis and
+                  Ethan Perez and
+                  Aleksandra Piktus and
+                  Fabio Petroni and
+                  Vladimir Karpukhin and
+                  Naman Goyal and
+                  Heinrich K{\"{u}}ttler and
+                  Mike Lewis and
+                  Wen{-}tau Yih and
+                  Tim Rockt{\"{a}}schel and
+                  Sebastian Riedel and
+                  Douwe Kiela},
+  title        = {Retrieval-Augmented Generation for Knowledge-Intensive {NLP} Tasks},
+  booktitle    = {Advances in Neural Information Processing Systems 33 (NeurIPS 2020)},
+  pages        = {9459--9474},
+  year         = {2020}
+}
+
+% G2
+@article{DBLP:journals/corr/abs-2310-08560,
+  author       = {Charles Packer and
+                  Sarah Wooders and
+                  Kevin Lin and
+                  Vivian Fang and
+                  Shishir G. Patil and
+                  Ion Stoica and
+                  Joseph E. Gonzalez},
+  title        = {{MemGPT}: Towards {LLMs} as Operating Systems},
+  journal      = {CoRR},
+  volume       = {abs/2310.08560},
+  year         = {2023},
+  eprinttype    = {arXiv}
+}
+
+% G3
+@inproceedings{DBLP:conf/uist/ParkOCMLB23,
+  author       = {Joon Sung Park and
+                  Joseph C. O'Brien and
+                  Carrie J. Cai and
+                  Meredith Ringel Morris and
+                  Percy Liang and
+                  Michael S. Bernstein},
+  title        = {Generative Agents: Interactive Simulacra of Human Behavior},
+  booktitle    = {Proc. {UIST}'23},
+  pages        = {1--22},
+  publisher    = {{ACM}},
+  year         = {2023}
+}
+
+% G4
+@inproceedings{DBLP:conf/ecai/ChhikaraKASY25,
+  author       = {Prateek Chhikara and
+                  Dev Khant and
+                  Saket Aryan and
+                  Taranjeet Singh and
+                  Deshraj Yadav},
+  title        = {{Mem0}: Building Production-Ready {AI} Agents with Scalable Long-Term Memory},
+  booktitle    = {Proc. {ECAI}'25},
+  series       = {Frontiers in Artificial Intelligence and Applications},
+  volume       = {413},
+  publisher    = {{IOS} Press},
+  year         = {2025}
+}
+
+% G5
+@inproceedings{DBLP:conf/nips/XuLMGTZ25,
+  author       = {Wujiang Xu and
+                  Zujie Liang and
+                  Kai Mei and
+                  Hang Gao and
+                  Juntao Tan and
+                  Yongfeng Zhang},
+  title        = {{A-MEM}: Agentic Memory for {LLM} Agents},
+  booktitle    = {Advances in Neural Information Processing Systems 38 (NeurIPS 2025)},
+  pages        = {17577--17604},
+  year         = {2025}
+}
+
+% G6
+@article{DBLP:journals/corr/abs-2501-13956,
+  author       = {Preston Rasmussen and
+                  Pavlo Paliychuk and
+                  Travis Beauvais and
+                  Jack Ryan and
+                  Daniel Chalef},
+  title        = {{Zep}: {A} Temporal Knowledge Graph Architecture for Agent Memory},
+  journal      = {CoRR},
+  volume       = {abs/2501.13956},
+  year         = {2025},
+  eprinttype    = {arXiv}
+}
+
+%% ---------------------------------------------------------------------
+%% G (part 2)
+%% ---------------------------------------------------------------------
+
+% G7
+@inproceedings{DBLP:conf/aaai/ZhongGGYW24,
+  author       = {Wanjun Zhong and
+                  Lianghong Guo and
+                  Qiqi Gao and
+                  He Ye and
+                  Yanlin Wang},
+  title        = {{MemoryBank}: Enhancing Large Language Models with Long-Term Memory},
+  booktitle    = {Proc. {AAAI}'24},
+  pages        = {19724--19731},
+  publisher    = {{AAAI} Press},
+  year         = {2024}
+}
+
+% G8
+@article{DBLP:journals/corr/abs-2507-07957,
+  author       = {Yu Wang and
+                  Xi Chen},
+  title        = {{MIRIX}: Multi-Agent Memory System for {LLM}-Based Agents},
+  journal      = {CoRR},
+  volume       = {abs/2507.07957},
+  year         = {2025},
+  eprinttype    = {arXiv}
+}
+
+% G9
+@inproceedings{DBLP:conf/nips/ZhangFWWYY25,
+  author       = {Guibin Zhang and
+                  Muxin Fu and
+                  Guancheng Wan and
+                  Miao Yu and
+                  Kun Wang and
+                  Shuicheng Yan},
+  title        = {{G-Memory}: Tracing Hierarchical Memory for Multi-Agent Systems},
+  booktitle    = {Advances in Neural Information Processing Systems 38 (NeurIPS 2025)},
+  pages        = {14587--14617},
+  year         = {2025}
+}
+
+% G10
+@article{DBLP:journals/corr/abs-2505-18279,
+  author       = {Alireza Rezazadeh and
+                  Zichao Li and
+                  Ange Lou and
+                  Yuying Zhao and
+                  Wei Wei and
+                  Yujia Bao},
+  title        = {Collaborative Memory: Multi-User Memory Sharing in {LLM} Agents with Dynamic Access Control},
+  journal      = {CoRR},
+  volume       = {abs/2505.18279},
+  year         = {2025},
+  eprinttype    = {arXiv}
+}
+
+% G11
+@article{DBLP:journals/corr/abs-2512-13564,
+  author       = {Yuyang Hu and
+                  Shichun Liu and
+                  Yanwei Yue and
+                  Guibin Zhang and
+                  Boyang Liu and
+                  Fangyi Zhu and
+                  Jiahang Lin and
+                  Honglin Guo and
+                  Shihan Dou and
+                  Zhiheng Xi and
+                  Senjie Jin and
+                  Jiejun Tan and
+                  Yanbin Yin and
+                  Jiongnan Liu and
+                  Zeyu Zhang and
+                  Zhongxiang Sun and
+                  Yutao Zhu and
+                  Hao Sun and
+                  Boci Peng and
+                  Zhenrong Cheng and
+                  Xuanbo Fan and
+                  Jiaxin Guo and
+                  Xinlei Yu and
+                  Zhenhong Zhou and
+                  Zewen Hu and
+                  Jiahao Huo and
+                  Junhao Wang and
+                  Yuwei Niu and
+                  Yu Wang and
+                  Zhenfei Yin and
+                  Xiaobin Hu and
+                  Yue Liao and
+                  Qiankun Li and
+                  Kun Wang and
+                  Wangchunshu Zhou and
+                  Yixin Liu and
+                  Dawei Cheng and
+                  Qi Zhang and
+                  Tao Gui and
+                  Shirui Pan and
+                  Yan Zhang and
+                  Philip Torr and
+                  Zhicheng Dou and
+                  Ji{-}Rong Wen and
+                  Xuanjing Huang and
+                  Yu{-}Gang Jiang and
+                  Shuicheng Yan},
+  title        = {Memory in the Age of {AI} Agents},
+  journal      = {CoRR},
+  volume       = {abs/2512.13564},
+  year         = {2025},
+  eprinttype    = {arXiv}
+}
+
+% G12
+@article{DBLP:journals/tois/ZhangDBMLCZDW25,
+  author       = {Zeyu Zhang and
+                  Quanyu Dai and
+                  Xiaohe Bo and
+                  Chen Ma and
+                  Rui Li and
+                  Xu Chen and
+                  Jieming Zhu and
+                  Zhenhua Dong and
+                  Ji{-}Rong Wen},
+  title        = {A Survey on the Memory Mechanism of Large Language Model-based Agents},
+  journal      = {{ACM} Trans. Inf. Syst.},
+  volume       = {43},
+  number       = {6},
+  year         = {2025}
+}
+
+% G13
+@article{DBLP:journals/tmlr/SumersYNG24,
+  author       = {Theodore R. Sumers and
+                  Shunyu Yao and
+                  Karthik Narasimhan and
+                  Thomas L. Griffiths},
+  title        = {Cognitive Architectures for Language Agents},
+  journal      = {Trans. Mach. Learn. Res.},
+  year         = {2024},
+  url          = {https://openreview.net/forum?id=1i6ZCvflQJ}
+}
+
+% G14
+@inproceedings{DBLP:conf/colm/WuBZWLZJZZLAWBW24,
+  author       = {Qingyun Wu and
+                  Gagan Bansal and
+                  Jieyu Zhang and
+                  Yiran Wu and
+                  Beibin Li and
+                  Erkang Zhu and
+                  Li Jiang and
+                  Xiaoyun Zhang and
+                  Shaokun Zhang and
+                  Jiale Liu and
+                  Ahmed Hassan Awadallah and
+                  Ryen W. White and
+                  Doug Burger and
+                  Chi Wang},
+  title        = {{AutoGen}: Enabling Next-Gen {LLM} Applications via Multi-Agent Conversation},
+  booktitle    = {Proc. {COLM}'24},
+  year         = {2024},
+  url          = {https://arxiv.org/abs/2308.08155}
+}
+
+% G15
+@inproceedings{DBLP:conf/iclr/HongZCZCWZWYLZRXWS24,
+  author       = {Sirui Hong and
+                  Mingchen Zhuge and
+                  Jonathan Chen and
+                  Xiawu Zheng and
+                  Yuheng Cheng and
+                  Jinlin Wang and
+                  Ceyao Zhang and
+                  Zili Wang and
+                  Steven Yau and
+                  Zijuan Lin and
+                  Liyang Zhou and
+                  Chenyu Ran and
+                  Lingfeng Xiao and
+                  Chenglin Wu and
+                  J{\"{u}}rgen Schmidhuber},
+  title        = {{MetaGPT}: Meta Programming for {A} Multi-Agent Collaborative Framework},
+  booktitle    = {Proc. {ICLR}'24},
+  pages        = {23247--23275},
+  publisher    = {OpenReview.net},
+  year         = {2024}
+}
+
+% G16
+@inproceedings{DBLP:conf/nips/LiHIKG23,
+  author       = {Guohao Li and
+                  Hasan Abed Al Kader Hammoud and
+                  Hani Itani and
+                  Dmitrii Khizbullin and
+                  Bernard Ghanem},
+  title        = {{CAMEL}: Communicative Agents for "Mind" Exploration of Large Language Model Society},
+  booktitle    = {Advances in Neural Information Processing Systems 36 (NeurIPS 2023)},
+  pages        = {51991--52008},
+  year         = {2023}
+}
+
+% G17
+@inproceedings{DBLP:conf/nips/CemriPYACTKPKRZGS25,
+  author       = {Mert Cemri and
+                  Melissa Z. Pan and
+                  Shuyi Yang and
+                  Lakshya A. Agrawal and
+                  Bhavya Chopra and
+                  Rishabh Tiwari and
+                  Kurt Keutzer and
+                  Aditya Parameswaran and
+                  Dan Klein and
+                  Kannan Ramchandran and
+                  Matei Zaharia and
+                  Joseph E. Gonzalez and
+                  Ion Stoica},
+  title        = {Why Do Multi-Agent {LLM} Systems Fail?},
+  booktitle    = {Advances in Neural Information Processing Systems 38 (NeurIPS 2025)},
+  pages        = {135676--135729},
+  year         = {2025}
+}
+
+% G18
+@inproceedings{DBLP:conf/nlposs/Bang23,
+  author       = {Fu Bang},
+  title        = {{GPTCache}: An Open-Source Semantic Cache for {LLM} Applications Enabling Faster Answers and Cost Savings},
+  booktitle    = {Proc. {NLP-OSS}'23},
+  pages        = {212--218},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2023}
+}
+
+% G19
+@inproceedings{DBLP:conf/iclr/SchroederDCCLZKKZG26,
+  author       = {Luis Gaspar Schroeder and
+                  Aditya Desai and
+                  Alejandro Cuadron and
+                  Kyle Chu and
+                  Shu Liu and
+                  Mark Zhao and
+                  Stephan Krusche and
+                  Alfons Kemper and
+                  Matei Zaharia and
+                  Joseph E. Gonzalez},
+  title        = {{vCache}: Verified Semantic Prompt Caching},
+  booktitle    = {Proc. {ICLR}'26},
+  publisher    = {OpenReview.net},
+  year         = {2026},
+  url          = {https://openreview.net/forum?id=zF0A0xw3HZ}
+}
+
+% G20
+@inproceedings{DBLP:conf/cidr/LiuPSZZACSYSZCCGP26,
+  author       = {Shu Liu and
+                  Soujanya Ponnapalli and
+                  Shreya Shankar and
+                  Sepanta Zeighami and
+                  Alan Zhu and
+                  Shubham Agarwal and
+                  Ruiqi Chen and
+                  Samion Suwito and
+                  Shuo Yuan and
+                  Ion Stoica and
+                  Matei Zaharia and
+                  Alvin Cheung and
+                  Natacha Crooks and
+                  Joseph E. Gonzalez and
+                  Aditya G. Parameswaran},
+  title        = {Supporting Our {AI} Overlords: Redesigning Data Systems to be Agent-First},
+  booktitle    = {Proc. {CIDR}'26},
+  publisher    = {www.cidrdb.org},
+  year         = {2026},
+  url          = {https://vldb.org/cidrdb/2026/supporting-our-ai-overlords-redesigning-data-systems-to-be-agent-first.html}
+}
+
+% G21
+@article{DBLP:journals/corr/abs-2606-24535,
+  author       = {Yanki Margalit and
+                  Nurit Cohen{-}Inger and
+                  Erni Avram and
+                  Ran Taig and
+                  Oded Margalit},
+  title        = {Governed Shared Memory for Multi-Agent {LLM} Systems},
+  journal      = {CoRR},
+  volume       = {abs/2606.24535},
+  year         = {2026},
+  eprinttype    = {arXiv}
+}
+
+% G22
+@article{DBLP:journals/corr/abs-2603-10062,
+  author       = {Zhongming Yu and
+                  Naicheng Yu and
+                  Hejia Zhang and
+                  Wentao Ni and
+                  Mingrui Yin and
+                  Jiaying Yang and
+                  Yujie Zhao and
+                  Jishen Zhao},
+  title        = {Multi-Agent Memory from a Computer Architecture Perspective: Visions and Challenges Ahead},
+  journal      = {CoRR},
+  volume       = {abs/2603.10062},
+  year         = {2026},
+  eprinttype    = {arXiv}
+}
+
+% G23
+% G24
+@article{DBLP:journals/corr/abs-2605-17076,
+  author       = {Sajjad Khan},
+  title        = {{S-Bus}: Automatic Read-Set Reconstruction for Multi-Agent {LLM} State Coordination},
+  journal      = {CoRR},
+  volume       = {abs/2605.17076},
+  year         = {2026},
+  eprinttype    = {arXiv}
+}
+
+% G25
+@article{DBLP:journals/corr/abs-2606-15376,
+  author       = {Hongtao Lyu and
+                  Dingyan Zhang and
+                  Mingyu Wu and
+                  Xingda Wei and
+                  Haibo Chen},
+  title        = {{CoAgent}: Concurrency Control for Multi-Agent Systems},
+  journal      = {CoRR},
+  volume       = {abs/2606.15376},
+  year         = {2026},
+  eprinttype    = {arXiv}
+}
+
+% G26
+@article{DBLP:journals/corr/abs-2608-05412,
+  author       = {Barzan Mozafari},
+  title        = {{BEGIN AI TRANSACTION}: Semantic Isolation for Durable {AI} Workflows},
+  journal      = {CoRR},
+  volume       = {abs/2608.05412},
+  year         = {2026},
+  eprinttype    = {arXiv}
+}
+
+% G27
+@article{DBLP:journals/corr/abs-2607-23929,
+  author       = {Xiaoyang Li and
+                  Yiqi Wang and
+                  Haohui Lu and
+                  Zhi Chen and
+                  Mo Li and
+                  Pingan Song and
+                  Mingkai Zheng and
+                  Taotao Cai},
+  title        = {{MemTX}: Transactional Belief Commit for Stateful Agent Memory},
+  journal      = {CoRR},
+  volume       = {abs/2607.23929},
+  year         = {2026},
+  eprinttype    = {arXiv}
+}
+
+% G28
+@article{DBLP:journals/corr/abs-2610-03140,
+  author       = {Oto Mraz and
+                  Rares {\c{S}}erban and
+                  Kyriakos Psarakis and
+                  Burcu Kulahcioglu Ozkan and
+                  Asterios Katsifodimos},
+  title        = {Tracking State Footprints: How Agents Can Transact},
+  journal      = {CoRR},
+  volume       = {abs/2610.03140},
+  year         = {2026},
+  eprinttype    = {arXiv}
+}
+
+% G29
+@inproceedings{DBLP:journals/corr/abs-2608-18092,
+  author       = {Xin Yang and
+                  Letian Li and
+                  Zimo Ji and
+                  Terry Jingchen Zhang and
+                  Wenyuan Jiang},
+  title        = {Position: Multi-Agent Systems Should Prioritize Concurrency Control},
+  booktitle    = {Proc. {ICML}'26},
+  series       = {Proceedings of Machine Learning Research},
+  volume       = {306},
+  publisher    = {PMLR},
+  year         = {2026}
+}
+
+% G30
+@article{DBLP:journals/corr/abs-2608-13900,
+  author       = {Zhaoyan Sun and
+                  Xiaoxiao Wang and
+                  Guoliang Li},
+  title        = {Agentic Transaction: Towards {ACID}-Compliant Agent Systems},
+  journal      = {CoRR},
+  volume       = {abs/2608.13900},
+  year         = {2026},
+  eprinttype    = {arXiv}
+}
+
+% G31
+@article{DBLP:journals/corr/abs-2606-06240,
+  author       = {Ziming Wang},
+  title        = {{TOKI}: {A} Bitemporal Operator Algebra for Contradiction Resolution in {LLM}-Agent Persistent Memory},
+  journal      = {CoRR},
+  volume       = {abs/2606.06240},
+  year         = {2026},
+  eprinttype    = {arXiv}
+}
+
+%% ---------------------------------------------------------------------
+%% H. Datasets, embedding models, benchmarks; additional references
+%% ---------------------------------------------------------------------
+
+% H1
+@inproceedings{DBLP:conf/emnlp/ReimersG19,
+  author       = {Nils Reimers and
+                  Iryna Gurevych},
+  title        = {{Sentence-BERT}: Sentence Embeddings using Siamese {BERT}-Networks},
+  booktitle    = {Proc. {EMNLP-IJCNLP}'19},
+  pages        = {3980--3990},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2019}
+}
+
+% H2
+@inproceedings{DBLP:conf/acl/ChenXZLLL24,
+  author       = {Jianlyu Chen and
+                  Shitao Xiao and
+                  Peitian Zhang and
+                  Kun Luo and
+                  Defu Lian and
+                  Zheng Liu},
+  title        = {{M3-Embedding}: Multi-Linguality, Multi-Functionality, Multi-Granularity
+                  Text Embeddings Through Self-Knowledge Distillation},
+  booktitle    = {Proc. {ACL} Findings'24},
+  pages        = {2318--2335},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2024}
+}
+
+% H3
+@article{DBLP:journals/corr/abs-1611-09268,
+  author       = {Payal Bajaj and
+                  Daniel Campos and
+                  Nick Craswell and
+                  Li Deng and
+                  Jianfeng Gao and
+                  Xiaodong Liu and
+                  Rangan Majumder and
+                  Andrew McNamara and
+                  Bhaskar Mitra and
+                  Tri Nguyen and
+                  Mir Rosenberg and
+                  Xia Song and
+                  Alina Stoica and
+                  Saurabh Tiwary and
+                  Tong Wang},
+  title        = {{MS} {MARCO}: {A} Human Generated {MAchine} Reading {COmprehension}
+                  Dataset},
+  journal      = {CoRR},
+  volume       = {abs/1611.09268},
+  year         = {2016},
+  eprinttype    = {arXiv}
+}
+
+% H4
+@inproceedings{DBLP:conf/acl/MaharanaLTBBF24,
+  author       = {Adyasha Maharana and
+                  Dong{-}Ho Lee and
+                  Sergey Tulyakov and
+                  Mohit Bansal and
+                  Francesco Barbieri and
+                  Yuwei Fang},
+  title        = {Evaluating Very Long-Term Conversational Memory of {LLM} Agents},
+  booktitle    = {Proc. {ACL}'24},
+  pages        = {13851--13870},
+  publisher    = {Association for Computational Linguistics},
+  year         = {2024}
+}
+
+% H5
+@inproceedings{DBLP:conf/iclr/WuWYZCY25,
+  author       = {Di Wu and
+                  Hongwei Wang and
+                  Wenhao Yu and
+                  Yuwei Zhang and
+                  Kai{-}Wei Chang and
+                  Dong Yu},
+  title        = {{LongMemEval}: Benchmarking Chat Assistants on Long-Term Interactive
+                  Memory},
+  booktitle    = {Proc. {ICLR}'25},
+  publisher    = {OpenReview.net},
+  year         = {2025}
+}
+
+% H6
+@article{DBLP:journals/is/AumullerBF20,
+  author       = {Martin Aum{\"{u}}ller and
+                  Erik Bernhardsson and
+                  Alexander Faithfull},
+  title        = {{ANN-Benchmarks}: {A} benchmarking tool for approximate nearest neighbor
+                  algorithms},
+  journal      = {Inf. Syst.},
+  volume       = {87},
+  pages        = {101374},
+  year         = {2020}
+}
+
+% H7
+@inproceedings{DBLP:conf/nips/SimhadriADBILWLMKDCCMZCSZCYH25,
+  author       = {Harsha Vardhan Simhadri and
+                  Martin Aum{\"{u}}ller and
+                  Matthijs Douze and
+                  Dmitry Baranchuk and
+                  Amir Ingber and
+                  Edo Liberty and
+                  George Williams and
+                  Ben Landrum and
+                  Magdalen Manohar and
+                  Mazin Karjikar and
+                  Laxman Dhulipala and
+                  Meng Chen and
+                  Yue Chen and
+                  Rui Ma and
+                  Kai Zhang and
+                  Yuzheng Cai and
+                  Jiayang Shi and
+                  Weiguo Zheng and
+                  Yizhuo Chen and
+                  Jie Yin and
+                  Ben Huang},
+  title        = {Results of the {Big ANN}: {NeurIPS}'23 competition},
+  booktitle    = {Advances in Neural Information Processing Systems 38 (NeurIPS 2025)},
+  year         = {2025},
+  url          = {https://papers.nips.cc/paper_files/paper/2025/hash/63092d79154adebd7305dfd498cbff70-Abstract-Datasets_and_Benchmarks_Track.html}
+}
+
+% H8
+@inproceedings{DBLP:conf/cloud/CooperSTRS10,
+  author       = {Brian F. Cooper and
+                  Adam Silberstein and
+                  Erwin Tam and
+                  Raghu Ramakrishnan and
+                  Russell Sears},
+  title        = {Benchmarking Cloud Serving Systems with {YCSB}},
+  booktitle    = {Proc. {SoCC}'10},
+  pages        = {143--154},
+  publisher    = {{ACM}},
+  year         = {2010}
+}
+
+% X1
+@inproceedings{DBLP:conf/nips/ZhangZL15,
+  author       = {Xiang Zhang and
+                  Junbo Zhao and
+                  Yann LeCun},
+  title        = {Character-level Convolutional Networks for Text Classification},
+  booktitle    = {Advances in Neural Information Processing Systems 28 (NIPS 2015)},
+  pages        = {649--657},
+  year         = {2015}
+}
+
+% X2
+@inproceedings{DBLP:conf/nips/LevinaB04,
+  author       = {Elizaveta Levina and
+                  Peter J. Bickel},
+  title        = {Maximum Likelihood Estimation of Intrinsic Dimension},
+  booktitle    = {Advances in Neural Information Processing Systems 17 (NIPS 2004)},
+  pages        = {777--784},
+  year         = {2004}
+}
+
+% X3
+@inproceedings{DBLP:conf/kdd/AmsalegCFGHKN15,
+  author       = {Laurent Amsaleg and
+                  Oussama Chelly and
+                  Teddy Furon and
+                  St{\'{e}}phane Girard and
+                  Michael E. Houle and
+                  Ken{-}ichi Kawarabayashi and
+                  Michael Nett},
+  title        = {Estimating Local Intrinsic Dimensionality},
+  booktitle    = {Proc. {KDD}'15},
+  pages        = {29--38},
+  publisher    = {{ACM}},
+  year         = {2015}
+}
+
+% X4
+@inproceedings{DBLP:conf/stoc/KargerR02,
+  author       = {David R. Karger and
+                  Matthias Ruhl},
+  title        = {Finding nearest neighbors in growth-restricted metrics},
+  booktitle    = {Proc. {STOC}'02},
+  pages        = {741--750},
+  publisher    = {{ACM}},
+  year         = {2002}
+}
+
+% X5
+@inproceedings{DBLP:conf/sigmod/DiaconuFILMSVZ13,
+  author       = {Cristian Diaconu and
+                  Craig Freedman and
+                  Erik Ismert and
+                  Per{-}{\AA}ke Larson and
+                  Pravin Mittal and
+                  Ryan Stonecipher and
+                  Nitin Verma and
+                  Mike Zwilling},
+  title        = {{Hekaton}: {SQL} Server's Memory-Optimized {OLTP} Engine},
+  booktitle    = {Proc. {SIGMOD}'13},
+  pages        = {1243--1254},
+  publisher    = {{ACM}},
+  year         = {2013}
+}
+
+% X6
+@inproceedings{DBLP:conf/sisap/Houle17,
+  author       = {Michael E. Houle},
+  title        = {Local Intrinsic Dimensionality {I}: An Extreme-Value-Theoretic Foundation
+                  for Similarity Applications},
+  booktitle    = {Proc. {SISAP}'17},
+  series       = {Lecture Notes in Computer Science},
+  volume       = {10609},
+  pages        = {64--79},
+  publisher    = {Springer},
+  year         = {2017}
+}
+
+%% ---------------------------------------------------------------------
+%% Software, documentation and other non-archival sources
+%% (no DBLP record; URLs checked in October 2026)
+%% ---------------------------------------------------------------------
+
+% I1
+@misc{pgvector,
+  author       = {Andrew Kane},
+  title        = {pgvector: Open-source vector similarity search for {Postgres}},
+  howpublished = {\url{https://github.com/pgvector/pgvector}},
+  note         = {Version 0.8.7},
+  year         = {2026}
+}
+
+% I2
+@misc{hnswlib,
+  author       = {{nmslib}},
+  title        = {hnswlib: Header-only {C++}/{Python} library for fast approximate nearest neighbors},
+  howpublished = {\url{https://github.com/nmslib/hnswlib}},
+  year         = {2026}
+}
+
+% I3
+@misc{qdrant,
+  author       = {{Qdrant}},
+  title        = {Qdrant: Vector Database and Vector Search Engine},
+  howpublished = {\url{https://github.com/qdrant/qdrant}},
+  note         = {Version 1.15.4},
+  year         = {2026}
+}
+
+% I4
+@misc{weaviate,
+  author       = {{Weaviate}},
+  title        = {Weaviate: An Open-source Vector Database},
+  howpublished = {\url{https://github.com/weaviate/weaviate}},
+  year         = {2026}
+}
+
+% I5
+@misc{chroma,
+  author       = {{Chroma}},
+  title        = {Chroma: Open-source Search and Retrieval Database for {AI} Applications},
+  howpublished = {\url{https://github.com/chroma-core/chroma}},
+  note         = {Version 1.5.9},
+  year         = {2026}
+}
+
+% I6
+@misc{lancedb,
+  author       = {{LanceDB}},
+  title        = {LanceDB: Embedded Retrieval Engine for Multimodal {AI}},
+  howpublished = {\url{https://github.com/lancedb/lancedb}},
+  year         = {2026}
+}
+
+% I7
+@misc{milvusconsistency,
+  author       = {{Milvus}},
+  title        = {Milvus Documentation: Consistency Level},
+  howpublished = {\url{https://milvus.io/docs/consistency.md}},
+  year         = {2026}
+}
+
+% I8
+@misc{qdrantconsistency,
+  author       = {{Qdrant}},
+  title        = {Qdrant Documentation: Consistency Guarantees},
+  howpublished = {\url{https://qdrant.tech/documentation/scaling/consistency-guarantees/}},
+  year         = {2026}
+}
+
+% I9
+@misc{weaviateconsistency,
+  author       = {{Weaviate}},
+  title        = {Weaviate Documentation: Consistency},
+  howpublished = {\url{https://docs.weaviate.io/weaviate/concepts/replication-architecture/consistency}},
+  year         = {2026}
+}
+
+% I10
+@misc{jepsen,
+  author       = {Kyle Kingsbury},
+  title        = {Jepsen Analyses},
+  howpublished = {\url{https://jepsen.io/analyses}},
+  year         = {2026}
+}
+
+% I11
+@misc{songblog,
+  author       = {Zhao Song},
+  title        = {Is pgvector breaking {PostgreSQL}'s Repeatable Read isolation?},
+  howpublished = {\url{https://kernelmaker.github.io/pgvector_rr}},
+  year         = {2025}
+}
+
+% I17
+@misc{pgvectorissue,
+  author       = {Chang Lu and Yizheng Zhao},
+  title        = {{HNSW} under {SERIALIZABLE}: Two Concurrent Check-then-Insert Transactions Can Both Commit},
+  howpublished = {pgvector issue \#1055, \url{https://github.com/pgvector/pgvector/issues/1055}},
+  year         = {2026}
+}
+
+@misc{readmessi,
+  author       = {{PostgreSQL Global Development Group}},
+  title        = {Serializable Snapshot Isolation ({SSI}) and Predicate Locking: {README-SSI}},
+  howpublished = {\url{https://github.com/postgres/postgres/blob/REL_16_STABLE/src/backend/storage/lmgr/README-SSI}},
+  note         = {PostgreSQL 16 source tree},
+  year         = {2026}
+}
+
+@misc{postgres,
+  author       = {{PostgreSQL Global Development Group}},
+  title        = {{PostgreSQL} 16 Documentation},
+  howpublished = {\url{https://www.postgresql.org/docs/16/}},
+  year         = {2026}
+}
+
+@misc{milvuslite,
+  author       = {{Milvus}},
+  title        = {Milvus Lite: A Lightweight Version of {Milvus}},
+  howpublished = {\url{https://github.com/milvus-io/milvus-lite}},
+  year         = {2026}
+}
+
+@misc{wordllama,
+  author       = {D. Lee Miller},
+  title        = {{WordLlama}},
+  howpublished = {\url{https://github.com/dleemiller/WordLlama}},
+  note         = {Version 0.4.0},
+  year         = {2026}
+}
+
+@misc{spacy,
+  author       = {Matthew Honnibal and
+                  Ines Montani and
+                  Sofie Van Landeghem and
+                  Adriane Boyd},
+  title        = {{spaCy}: Industrial-strength Natural Language Processing in {Python}},
+  howpublished = {\url{https://spacy.io}},
+  year         = {2020}
+}
+
+@inproceedings{DBLP:conf/iclr/WangSMHLB19,
+  author       = {Alex Wang and
+                  Amanpreet Singh and
+                  Julian Michael and
+                  Felix Hill and
+                  Omer Levy and
+                  Samuel R. Bowman},
+  title        = {{GLUE:} {A} Multi-Task Benchmark and Analysis Platform for Natural
+                  Language Understanding},
+  booktitle    = {Proc. {ICLR}'19},
+  publisher    = {OpenReview.net},
+  year         = {2019}
+}
+
+@misc{ariadnefull,
+  title        = {Admissible, Not Repeatable: Isolating Approximate Similarity Reads in Shared Agent Memory (Full Version)},
+  author       = {Chang Lu and Yizheng Zhao},
+  year         = {2026},
+  howpublished = {Technical report, \url{https://github.com/anonymous-ai-researcher/ariadne}},
+  note         = {Proofs, PostgreSQL details, the conflict law, further experiments, auditor validation and reproducibility}
+}

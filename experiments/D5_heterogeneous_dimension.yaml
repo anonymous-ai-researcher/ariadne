@@ -1,0 +1,35 @@
+name: D5_heterogeneous_dimension
+doc: |
+  Question. The closed form uses one intrinsic dimension D.  What happens when the data mix regions of different dimension?
+  Setup. Synthetic manifolds of dimension [4, 16] and [8, 32] mixed in one store, against the homogeneous cases; on real data the same
+    question is answered by stratifying the reads by local intrinsic dimension (law file field lid; `python -m ariadne.law strata`).
+  Report. Closed-form error with a single pooled D against the semi-parametric form (which needs no D); per-stratum fits.
+vary_workload: true
+base:
+  k: 10
+  tau_cos: 0.0
+  store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate, policy: none}
+  workload: {kind: synthetic, dim: 64, D: 16, n_base: 100000, n_stream: 20000, pi: 0.3, Ds: 4, lag_p: 0.3, agents: 64}
+grid:
+  workload.D:
+  - {_name: '8', workload.D: 8}
+  - {_name: '16', workload.D: 16}
+  - _name: 4+16
+    workload.D: [4, 16]
+  - _name: 8+32
+    workload.D: [8, 32]
+  workload.Ds: [2, 4]
+repeat: 3
+audits: [law]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    workload: {kind: synthetic, dim: 32, D: 12, n_base: 8000, n_stream: 2000, pi: 0.4, Ds: 3, lag_p: 0.3, agents: 32}
+  grid:
+    workload.D:
+    - _name: 4+16
+      workload.D: [4, 16]
+    workload.Ds: [3]
+  repeat: 1

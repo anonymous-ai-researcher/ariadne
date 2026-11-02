@@ -1,0 +1,38 @@
+name: B7_characterization
+doc: |
+  Question. The characterization theorem (one in-ball insertion at distance t and old rank p keeps the exact answer c-admissible iff
+    r_p <= c t and r_i <= c r_{i-1} for p < i <= k; a deletion outside the answer never invalidates): does it agree with what happens
+    on every real single-insertion case?
+  Setup. Instrumented runs over workloads, k in {5, 10, 20, 50} and the c grid; the law extraction compares the predicate's prediction
+    with the observed admissibility for every read that saw exactly one concurrent in-ball insertion.
+  Report. characterization = agreeing / tested (must be equal) in audit_law.jsonl, total number of cases.
+base:
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  protocol: {kind: validate, policy: none}
+cases:
+- _name: L2
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 2}
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: L8
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 8}
+- _name: A16
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 16}
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+grid:
+  k: [5, 10, 20, 50]
+repeat: 3
+audits: [law]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+  cases:
+  - _name: L4
+    workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4, stream: 300}
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  grid:
+    k: [5, 10]

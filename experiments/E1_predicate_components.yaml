@@ -1,0 +1,38 @@
+name: E1_predicate_components
+doc: |
+  Question. Which part of the c-admissibility predicate matters?  Per-rank distance test (ours) against its pieces and neighbours:
+    only the k-th distance (ball radius), only the nearest distance, the sum of distances, identity tests (set, overlap, top-j).
+  Report. extra_calls_per_100, dup_written_per_100, divergence per proxy, rho_committed p99 and ">c".  Expect: radius-only accepts
+    duplicate races (it ignores the nearest rank); rank1-only is cheap but violates the contract at other ranks; overlap accepts
+    most duplicate races; the per-rank test is the cheapest one that keeps the contract.
+base:
+  k: 10
+  tau_cos: 0.1
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate}
+cases:
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+- _name: fan
+  tau_cos: 0.15
+  workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 10000, n_events: 600, conc: 16, think: 0.2, jitter: 1.0}
+grid:
+  protocol.policy: [exact, set, 'overlap:0.9', 'overlap:0.8', top1, 'topj:3', 'radius:1.1', 'rank1:1.1', 'sumdist:1.1', 'cadm:1.1', 'cert:1.1', 'radius:1.2',
+    'rank1:1.2', 'sumdist:1.2', 'cadm:1.2']
+repeat: 3
+audits: [run, sep]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  - _name: fan
+    tau_cos: 0.15
+    workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 3000, n_events: 60, conc: 8, think: 0.02, jitter: 1.0}
+  grid:
+    protocol.policy: [exact, 'overlap:0.9', 'radius:1.1', 'rank1:1.1', 'cadm:1.1']

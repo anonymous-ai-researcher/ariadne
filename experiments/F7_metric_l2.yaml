@@ -1,0 +1,37 @@
+name: F7_metric_l2
+doc: |
+  Question. Sanity check of the metric handling: on unit vectors the Euclidean metric equals the chord distance, so an L2 store must
+    give the same outcomes as a cosine store.
+  Report. extra_calls_per_100 and safety_theorem.violations for both metrics (tau is given directly as a distance for L2: 0.4472 is
+    the chord distance of cosine distance 0.10).
+base:
+  k: 10
+  tau_cos: 0.1
+  tau: 0.4472
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate}
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 20000, stream: 3000, teams: single, agents: 32}
+grid:
+  store:
+  - _name: pg-cos
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  - _name: pg-l2
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40, metric: l2}
+  - _name: faiss-cos
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  - _name: faiss-l2
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40, metric: l2}
+  protocol.policy: [exact, 'cadm:1.1', 'cert:1.1']
+repeat: 1
+audits: [run]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 3000, stream: 200, teams: single, agents: 16}
+  grid:
+    store:
+    - _name: faiss-cos
+      store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+    - _name: faiss-l2
+      store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40, metric: l2}
+    protocol.policy: ['cadm:1.1']

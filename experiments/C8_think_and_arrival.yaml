@@ -1,0 +1,55 @@
+name: C8_think_and_arrival
+doc: |
+  Question. Are the savings robust to how long and how variably agents think, and to open-loop arrivals?
+  Setup. (a) think-time distribution: fixed, exponential, lognormal with sigma 0.3 and 1.0, Pareto (heavy tail), each at mean 0.05, 0.2,
+    1 and 5 s; (b) open loop: Poisson and bursty arrivals at several rates instead of a fixed number of agents.
+  Report. changed-during-think share (first_validation_failed_% under exact), extra_calls_per_100 per policy, latency tail, rounds_p99.
+    Expect: the conflict window scales with (think time * write rate); the ratio between predicates is stable.
+base:
+  k: 10
+  tau_cos: 0.1
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate}
+cases:
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+grid:
+  think:
+  - {_name: fixed-0.05, decider.think: 'fixed:0.05'}
+  - {_name: exp-0.05, decider.think: 'exp:0.05'}
+  - {_name: logn0.3-0.05, decider.think: 'lognormal:0.05,0.3'}
+  - {_name: logn1.0-0.05, decider.think: 'lognormal:0.05,1.0'}
+  - {_name: pareto-0.05, decider.think: 'pareto:0.05,2.5'}
+  - {_name: fixed-0.2, decider.think: 'fixed:0.2'}
+  - {_name: exp-0.2, decider.think: 'exp:0.2'}
+  - {_name: logn0.3-0.2, decider.think: 'lognormal:0.2,0.3'}
+  - {_name: logn1.0-0.2, decider.think: 'lognormal:0.2,1.0'}
+  - {_name: pareto-0.2, decider.think: 'pareto:0.2,2.5'}
+  - {_name: fixed-1.0, decider.think: 'fixed:1.0'}
+  - {_name: exp-1.0, decider.think: 'exp:1.0'}
+  - {_name: logn0.3-1.0, decider.think: 'lognormal:1.0,0.3'}
+  - {_name: logn1.0-1.0, decider.think: 'lognormal:1.0,1.0'}
+  - {_name: pareto-1.0, decider.think: 'pareto:1.0,2.5'}
+  - {_name: fixed-5.0, decider.think: 'fixed:5.0'}
+  - {_name: exp-5.0, decider.think: 'exp:5.0'}
+  - {_name: logn0.3-5.0, decider.think: 'lognormal:5.0,0.3'}
+  - {_name: logn1.0-5.0, decider.think: 'lognormal:5.0,1.0'}
+  - {_name: pareto-5.0, decider.think: 'pareto:5.0,2.5'}
+  protocol.policy: [exact, 'cadm:1.1', 'overlap:0.9']
+repeat: 3
+audits: [run]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  grid:
+    think:
+    - {_name: fixed-0.02, decider.think: 'fixed:0.02'}
+    - {_name: pareto-0.02, decider.think: 'pareto:0.02,2.5'}
+    protocol.policy: [exact, 'cadm:1.1']

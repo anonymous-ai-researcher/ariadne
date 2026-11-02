@@ -1,0 +1,15 @@
+name: A8_keyed_control
+kind: script
+doc: |
+  Question. Is the abort storm of A5 a property of SERIALIZABLE or of similarity predicates?  The same check-then-insert pattern on a
+    scalar key with a B-tree.
+  Report. Duplicates per 100 facts and aborts per task at READ COMMITTED and SERIALIZABLE, two table sizes.  Expect: 0 duplicates and
+    a fraction of an abort per task under SERIALIZABLE (page-level predicate locks), against tens of aborts for the vector version.
+  Setup. As the fan-out workload of A5 at 16 concurrent tasks (600 facts, thinking time 0.2 s, copies arrive within one thinking time,
+    10,000 rows in the small table), three seeds; the paper reports the mean over the seeds for the small table.
+commands: ['{py} -m ariadne.pgtests.keyed --events {events} --conc 16 --think 0.2 --jitter 1.0 --base 10000 --seed 1 --out {out}/keyed.jsonl', '{py} -m
+    ariadne.pgtests.keyed --events {events} --conc 16 --think 0.2 --jitter 1.0 --base 10000 --seed 2 --out {out}/keyed.jsonl', '{py} -m ariadne.pgtests.keyed
+    --events {events} --conc 16 --think 0.2 --jitter 1.0 --base 10000 --seed 3 --out {out}/keyed.jsonl']
+vars: {events: 600}
+smoke:
+  commands: ['{py} -m ariadne.pgtests.keyed --smoke --out {out}/keyed.jsonl']

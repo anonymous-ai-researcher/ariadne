@@ -1,0 +1,21 @@
+name: A9_memory_frameworks
+kind: script
+doc: |
+  Question. Does the race reach users of agent-memory frameworks through their public API?  Mem0 (open source): several threads call
+    Memory.add for paraphrases of the same fact on one shared user id.
+  Modes. serial (reference), concurrent (the framework as is), lock (a global lock around add).
+  Report. Stored memories per fact, duplicates per 100 facts, lost facts, wall time, model calls.
+  Run. The first command uses the bundled mock model server (pipeline check only: its numbers are not results).  For results, set
+    OPENAI_API_KEY (and OPENAI_BASE_URL for a local model) and run the second command.  ariadne/ext/README.md lists what an adapter for
+    another framework needs (LangMem / LangGraph store, Letta, Zep / Graphiti, A-MEM, MemoryOS).
+  Real-model runs: three seeds; --no-marker (the stored text is the model's rewording, matched back to its event by embedding);
+    the thinking time defaults to the mean duration of one add in the serial mode, so the copies arrive as in the race table.
+commands: ['{py} -m ariadne.ext.mem0_race --mock --latency 0.5 --events {events} --facts synthetic --store {store} --out {out}/mem0_mock.jsonl', '{py} -m
+    ariadne.ext.mem0_race --base-url ${OPENAI_BASE_URL:-https://api.openai.com/v1} --model ${LLM_MODEL:-gpt-4o-mini} --embed-model ${EMBED_MODEL:-text-embedding-3-small}
+    --events {events} --store {store} --no-marker --seed 1 --out {out}/mem0_real.jsonl', '{py} -m ariadne.ext.mem0_race --base-url ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+    --model ${LLM_MODEL:-gpt-4o-mini} --embed-model ${EMBED_MODEL:-text-embedding-3-small} --events {events} --store {store} --no-marker --seed 2 --out
+    {out}/mem0_real.jsonl', '{py} -m ariadne.ext.mem0_race --base-url ${OPENAI_BASE_URL:-https://api.openai.com/v1} --model ${LLM_MODEL:-gpt-4o-mini} --embed-model
+    ${EMBED_MODEL:-text-embedding-3-small} --events {events} --store {store} --no-marker --seed 3 --out {out}/mem0_real.jsonl']
+vars: {events: 200, store: chroma}
+smoke:
+  commands: ['{py} -m ariadne.ext.mem0_race --mock --latency 0.05 --events 8 --facts synthetic --store chroma --out {out}/mem0_mock.jsonl']

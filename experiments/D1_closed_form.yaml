@@ -1,0 +1,12 @@
+name: D1_closed_form
+kind: script
+doc: |
+  Question. Is the closed form of the conflict law right?  Monte Carlo over a grid of k, intrinsic dimension D, sibling tilt
+    alpha = D_s / D and c; and the dense (c, D_s) grids used for the heat-map figure.
+  Report. Largest |z| over the grid and the share of cells beyond 2 (about 5% expected); mc.json and grid.json for plotting.
+    Run with several seeds and a larger n before quoting a number.
+commands: ['{py} -m ariadne.law mc --n {n} --out {out}/mc.json', '{py} -m ariadne.law mc --n {n} --seed 1 --out {out}/mc_seed1.json', '{py} -m ariadne.law
+    mc --n {n} --seed 2 --out {out}/mc_seed2.json', '{py} -m ariadne.law grid --out {out}/grid.json']
+vars: {n: 500000}
+smoke:
+  vars: {n: 20000}

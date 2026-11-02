@@ -1,0 +1,61 @@
+name: A5_ssi_cost
+doc: |
+  Question. What does PostgreSQL SERIALIZABLE cost on a similarity read-think-write transaction, and does it even remove the race?
+  Setup. pgvector with HNSW.  A SERIALIZABLE read takes a relation-level SIREAD lock on the whole index, so every concurrent insertion
+    conflicts.  Variants: think inside the transaction with immediate retry, with capped exponential backoff, and a short SERIALIZABLE
+    transaction after the think step (re-read, re-decide).  Compared with a lock held across the think step, a lock around a re-read,
+    and Algorithm AV.  Every retry of the long variants is one more model call.
+  Report. aborts_per_task, llm_calls_per_task, latency p50 / p99, gave_up, tps, dup_per_100_events (the short variant can still store
+    duplicates: see A6).  Expect: tens of aborts per task under contention for the long variants.
+base:
+  k: 10
+  tau_cos: 0.15
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 10000, n_events: 600, conc: 16, think: 0.2, jitter: 1.0}
+cases:
+- {_name: fan-c4, workload.conc: 4}
+- {_name: fan-c16, workload.conc: 16}
+- {_name: fan-c32, workload.conc: 32}
+- _name: A16
+  tau_cos: 0.1
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 16}
+- _name: L4
+  tau_cos: 0.1
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+grid:
+  proto:
+  - _name: rc
+    protocol: {kind: none}
+  - _name: ssi
+    protocol: {kind: ssi, variant: long, retry: immediate}
+  - _name: ssi-backoff
+    protocol: {kind: ssi, variant: long, retry: backoff}
+  - _name: ssi-short
+    protocol: {kind: ssi, variant: short, policy: redecide}
+  - _name: lock-long
+    protocol: {kind: lock_long}
+  - _name: lock-short
+    protocol: {kind: validate, policy: redecide}
+  - _name: av-exact
+    protocol: {kind: validate, policy: exact}
+  - _name: av-cadm1.1
+    protocol: {kind: validate, policy: 'cadm:1.1'}
+repeat: 3
+audits: [sep]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 3000, n_events: 60, conc: 8, think: 0.02, jitter: 1.0}
+  cases:
+  - {_name: fan-c8, workload.conc: 8}
+  grid:
+    proto:
+    - _name: rc
+      protocol: {kind: none}
+    - _name: ssi
+      protocol: {kind: ssi, variant: long, retry: immediate}
+    - _name: ssi-short
+      protocol: {kind: ssi, variant: short, policy: redecide}
+    - _name: av-cadm1.1
+      protocol: {kind: validate, policy: 'cadm:1.1'}

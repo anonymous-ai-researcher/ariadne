@@ -1,0 +1,47 @@
+name: C2_counterfactual_pareto
+doc: |
+  Question. The trade-off frontier: for every predicate, the model calls it saves against the decisions it lets through that differ
+    from the decision on the exact answer.  One instrumented run per workload suffices: the auditor replays every predicate on the
+    logged (read answer, validation answer) pairs, so a dense grid of c and of overlap thresholds costs nothing.
+  Report. first audit: per policy redo_% (x axis: saved = redo(exact) - redo(policy)) and accepted_div_vs_exact_% per decision proxy
+    (y axis), dup_written_per_100, rho_accepted_p99; index floor (floor_fresh_vs_exact_%).
+    Use --cs 1.005,1.01,1.02,1.03,1.05,1.07,1.1,1.15,1.2,1.3,1.5,2,3 for the dense grid:
+       python -m ariadne.audit first results/C2_counterfactual_pareto/*_s[0-9].pkl --cs ... --out results/C2_counterfactual_pareto/first_dense.jsonl
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  protocol: {kind: validate, policy: none}
+cases:
+- _name: L2
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 2}
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: L8
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 8}
+- _name: A16
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 16}
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+- _name: A64k50
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+  k: 50
+  ef: 100
+- _name: LME4
+  workload: {kind: stream, data: 'data/longmemeval__${EMB:-wordllama}.npz', base: 20000, stream: 6000, teams: group, agents: 4}
+- _name: QQP64
+  workload: {kind: stream, data: 'data/qqp__${EMB:-wordllama}.npz', base: 100000, stream: 6000, teams: single, agents: 64}
+- _name: MSM64
+  workload: {kind: stream, data: 'data/msmarco__${EMB:-wordllama}.npz', base: 1000000, stream: 6000, teams: single, agents: 64}
+repeat: 3
+audits: [first, run, law]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: L4
+    workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4, stream: 300}
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}

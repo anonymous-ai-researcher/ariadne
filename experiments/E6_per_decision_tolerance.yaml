@@ -1,0 +1,67 @@
+name: E6_per_decision_tolerance
+doc: |
+  Question. Can the tolerance be chosen per operation?  Destructive operations (replace, delete) strict, additive ones loose.
+  Variants. one c for everything (1.02, 1.1, 1.5) against mixed settings.
+  Report. extra_calls_per_100, serial audit per operation type, divergence of the link proxy (it stands for "which memory is
+    replaced").
+base:
+  k: 10
+  tau_cos: 0.1
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+cases:
+- _name: A64mix
+  workload:
+    kind: stream
+    data: data/agnews__${EMB:-wordllama}.npz
+    base: 60000
+    stream: 6000
+    teams: single
+    agents: 64
+    ops: {add: 0.6, upsert: 0.2, delete: 0.1, read: 0.1}
+- _name: L4mix
+  workload:
+    kind: stream
+    data: data/locomo__${EMB:-wordllama}.npz
+    teams: group
+    agents: 4
+    ops: {add: 0.6, upsert: 0.2, delete: 0.1, read: 0.1}
+grid:
+  proto:
+  - _name: all-1.02
+    protocol: {kind: validate, policy: 'cadm:1.02'}
+  - _name: all-1.1
+    protocol: {kind: validate, policy: 'cadm:1.1'}
+  - _name: all-1.5
+    protocol: {kind: validate, policy: 'cadm:1.5'}
+  - _name: add1.5-destr1.02
+    protocol:
+      kind: validate
+      policy: cadm:1.5
+      policy_by_op: {upsert: 'cadm:1.02', delete: 'cadm:1.02'}
+  - _name: add1.5-destr-exact
+    protocol:
+      kind: validate
+      policy: cadm:1.5
+      policy_by_op: {upsert: exact, delete: exact}
+  - _name: add-redecide-destr1.1
+    protocol:
+      kind: validate
+      policy: redecide
+      policy_by_op: {upsert: 'cadm:1.1', delete: 'cadm:1.1'}
+repeat: 3
+audits: [run, serial]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: A16mix
+    workload:
+      kind: stream
+      data: data/agnews__${EMB:-wordllama}.npz
+      base: 4000
+      stream: 300
+      teams: single
+      agents: 16
+      ops: {add: 0.6, upsert: 0.2, delete: 0.1, read: 0.1}

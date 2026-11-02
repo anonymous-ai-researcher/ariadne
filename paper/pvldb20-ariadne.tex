@@ -1,0 +1,1589 @@
+%%
+%% PVLDB Volume 20 (VLDB 2027) research paper: 12 pages excluding references, appendices included in the 12 pages.
+%% Template: github.com/vldbproceedings/VLDB-Template (acmart.cls v2.19, pvldb.sty).
+%%
+\documentclass[sigconf, nonacm, review]{acmart}
+
+%%% do not modify the following VLDB block %%
+%%% VLDB block start %%%
+\usepackage{pvldb}% VLDB/PVLDB formatting overrides, see pvldb.sty for details.
+                      % Do not remove -- required for consistent proceedings
+                      % formatting across all VLDB submissions.
+%%% VLDB block end %%%
+
+\renewcommand\vldbdoi{XX.XX/XXX.XX}
+\renewcommand\vldbpages{XXX-XXX}
+\renewcommand\vldbavailabilityurl{https://github.com/anonymous-ai-researcher/ariadne}
+
+\input{ariadne-preamble}
+%% review line numbers on every page: the VLDB block switches to the plain page style, which in acmart carries the line
+%% numbers only on the first page; this style is plain (page number centred at the foot) with the line numbers of review mode
+\makeatletter
+\fancypagestyle{ariadnereview}{\fancyhf{}%
+  \fancyhead[LO,LE]{\ACM@linecountL}\fancyhead[RO,RE]{\ACM@linecountR}%
+  \fancyfoot[C]{\footnotesize\thepage}%
+  \renewcommand{\headrulewidth}{0pt}\renewcommand{\footrulewidth}{0pt}}
+\makeatother
+\renewcommand\vldbpagestyle{ariadnereview}
+%\resultsfinaltrue
+
+\begin{document}
+
+\title{Admissible, Not Repeatable: Isolating Approximate Similarity Reads in Shared Agent Memory}
+
+\author{Chang Lu}
+\affiliation{%
+  \department{Computational Biology \& Biomedical Informatics Program}
+  \institution{Yale University}
+  \city{New Haven, CT}
+  \country{USA}
+}
+\email{chang.lu@yale.edu}
+
+\author{Yizheng Zhao}
+\affiliation{%
+  \department{State Key Laboratory of Novel Software Technology}
+  \institution{Nanjing University}
+  \city{Nanjing}
+  \country{China}
+}
+\email{zhaoyz@nju.edu.cn}
+
+\begin{abstract}
+Two agents sharing a vector store as memory can read the same
+neighborhood a second apart, both decide that an observation is new,
+and store it twice. Recording an observation is a transaction: an
+approximate similarity search, a model call of seconds, and a
+write. No isolation level defines what such a read may return while
+other agents write. Left unprotected, \res[N]{A1.nstores} stores keep
+\ri{A1.none.min} to \ri{A1.none.max} duplicates per 100 new facts.
+Serializable PostgreSQL with pgvector locks the entire index on every
+read, aborts a transaction \ri{A5.ssi.aborts} times on average at 16
+concurrent tasks, and, through a gap in its conflict detection, can
+still commit duplicates. Re-execution repeats the model call whenever a re-read at commit
+differs; it removes the race but pays even for changes that do not matter.
+An approximate read never promised the exact answer, so isolation need
+not protect it. We define \mbox{$c$-serializability}: in some serial order,
+every answer an agent acted on keeps each item within $c$ times the
+distance of the corresponding exact neighbor. A concurrent write
+often changes the exact answer yet leaves the agent's answer
+admissible, so its model call stands. A single write breaks admissibility only by landing closer
+to the query than $1/c$ of a retrieved item's distance, and such writes come
+mostly from agents on the same topic. A conflict law predicts
+how often a write invalidates a read on LoCoMo and AG News within
+\ra{D3.errs.min} to \ra{D3.errs.max} points; treating
+writes as unrelated errs by \ri{D3.errx.min} to \ri{D3.errx.max}.
+\sys{}, a validation layer over unmodified stores, cuts the token
+overhead from \ri{C3.tokover.exact.min}\% to
+\ri{C3.tokover.exact.max}\% under re-execution to
+\ri{C3.tokover.c110.min}\% to \ri{C3.tokover.c110.max}\% at $c=1.1$ with
+two LLMs, lets through only \res[N]{C2.dense.extra} duplicates beyond re-execution in
+\res[000{,}000]{C2.dense.tasks} replayed tasks, and keeps LoCoMo answer quality within
+\ra{C4.c110.absdiff.max} F1 points of re-execution.
+Identity-sensitive decisions pay a measurable price at $c=1.1$: up to
+\ra{C1.linkadd110.max} points for links to the nearest memory,
+\ra{C3.chg.c110.excess.max} for the models' own decisions.
+\end{abstract}
+
+\maketitle
+
+%% the artifact link of the VLDB block below in blue (only that link; \url is restored right after the block)
+\let\ariadneurl\url
+\def\ariadnetarget{\vldbavailabilityurl}
+\renewcommand{\url}[1]{\def\ariadnearg{#1}\ifx\ariadnearg\ariadnetarget\textcolor{blue}{\ariadneurl{#1}}\else\ariadneurl{#1}\fi}
+%%% do not modify the following VLDB block %%
+%%% VLDB block start %%%
+\vldbtopmatter
+%%% VLDB block end %%%
+\let\url\ariadneurl
+
+\begin{figure*}[t]
+\centering
+\datafig[\textwidth]{fig_t_01_teaser}
+\Description{Two panels. Each shows a query at the center of a disk that contains its ten nearest stored items, a smaller dashed disk marking the conflict set, and one item inserted by another agent between the read and the commit. In the left panel the inserted item lies inside the conflict set and becomes the nearest neighbor; in the right panel it lies in the outer ring and the held answer remains admissible.}
+\caption{Two reads of one LoCoMo run, and
+  what another agent inserted between each read and its commit (radii
+  are true distances from the query, $r_i$ of the $i$-th neighbor, $t$ of the insertion; angles are a projection). The
+  outer disk is the top-$k$ ball, which re-execution protects;
+  the dashed disk is the set of positions at which an insertion makes
+  the held answer inadmissible at $c=1.1$ (Corollary~\ref{cor:radius}).
+  (a)~A \emph{sibling}, a nearby fact of the same conversation, lands
+  deep inside: the agent must think again. (b)~A background item enters
+  near the rim: the held answer stays $1.1$-admissible and the
+  model call stands.}
+\label{fig:teaser}
+\end{figure*}
+
+%% ====================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Vector stores were built as read-heavy retrieval backends
+\cite{DBLP:conf/nips/LewisPPPKGKLYRRK20,DBLP:journals/vldb/PanWL24,DBLP:conf/sigmod/WangYGJXLWGLXYYZLCLZMGJWX21,DBLP:journals/pvldb/GuoLXYYLCXLLCQWTX22}:
+a corpus is embedded once and searched many times, and writes need not
+be coordinated with reads. Large language model (LLM) agents have turned them into
+writable long-term memory
+\cite{DBLP:journals/corr/abs-2310-08560,DBLP:conf/uist/ParkOCMLB23,DBLP:conf/ecai/ChhikaraKASY25,DBLP:conf/nips/XuLMGTZ25,DBLP:journals/corr/abs-2501-13956,DBLP:conf/aaai/ZhongGGYW24,DBLP:journals/tois/ZhangDBMLCZDW25,DBLP:journals/tmlr/SumersYNG24,DBLP:journals/corr/abs-2512-13564}.
+Unlike a retrieval-augmented model, which only reads its corpus, an
+agent writes what it observes into the store it reads from
+\cite{DBLP:journals/tmlr/SumersYNG24}. Agent frameworks compose many
+cooperating agents
+\cite{DBLP:conf/colm/WuBZWLZJZZLAWBW24,DBLP:conf/iclr/HongZCZCWZWYLZRXWS24,DBLP:conf/nips/LiHIKG23},
+recent memory systems and proposals let these agents share one store
+\cite{DBLP:journals/corr/abs-2507-07957,DBLP:conf/nips/ZhangFWWYY25,DBLP:journals/corr/abs-2505-18279,DBLP:journals/corr/abs-2606-24535,DBLP:journals/corr/abs-2603-10062},
+and surveys list keeping such a store consistent as an open problem
+\cite{DBLP:journals/tois/ZhangDBMLCZDW25,DBLP:journals/corr/abs-2512-13564}.
+
+Consider how an agent records an observation. It embeds the
+observation, retrieves the $k$ most similar memories, asks a language
+model whether the observation is new, redundant, or in conflict with
+them, and writes the decision back
+\cite{DBLP:conf/ecai/ChhikaraKASY25,DBLP:journals/corr/abs-2501-13956}.
+Other memory systems link the new item to the memories they retrieved
+\cite{DBLP:conf/nips/XuLMGTZ25,DBLP:conf/nips/ZhangFWWYY25}, and
+semantic caches, which answer a prompt with the stored answer to a
+similar one, insert a new entry when no stored prompt is similar enough
+\cite{DBLP:conf/nlposs/Bang23,DBLP:conf/iclr/SchroederDCCLZKKZG26}. We
+call this pattern \emph{read-think-write}. Its write is correct only if
+the retrieved neighborhood is still valid when the write lands, yet
+between the read and the write sits a model call that takes seconds.
+Two agents that observe the same fact a second apart both retrieve a
+neighborhood without the other's copy, both conclude that the fact is
+new, and both store it. In database terms, each transaction checks that
+no matching item exists and inserts one, and neither sees the other's
+insertion: a write skew over a predicate
+\cite{DBLP:conf/sigmod/BerensonBGMOO95,DBLP:journals/tods/FeketeLOOS05},
+here a similarity search. The duplicates matter: without isolation, later
+answers lose \rarng{C4.none.diff.min}{C4.none.diff.max} F1 points (\S\ref{sec:eval-llm}).
+
+This race is one instance of a widely voiced concern. Multi-agent
+systems fail often \cite{DBLP:conf/nips/CemriPYACTKPKRZGS25}, and
+recent work identifies concurrency anomalies in shared agent state
+\cite{DBLP:journals/corr/abs-2608-18092,DBLP:journals/corr/abs-2610-03140,DBLP:journals/corr/abs-2606-15376,DBLP:journals/corr/abs-2605-17076,DBLP:journals/corr/abs-2607-23929}
+and asks for transactional or isolation support for agents, their
+memory, and their workflows
+\cite{DBLP:journals/corr/abs-2608-05412,DBLP:journals/corr/abs-2608-13900,DBLP:conf/cidr/LiuPSZZACSYSZCCGP26}.
+These proposals lock or revalidate the objects, cells, tool calls, or
+versioned resources that a transaction names; a similarity read names
+none of the items it depends on, and neither this work nor the
+isolation theory beneath it defines what such a read may return under
+concurrent writes.
+
+\paragraph{Why existing isolation does not apply}
+Serializability, the strongest isolation level, requires every
+execution to be equivalent to running the transactions one at a time.
+This criterion and its weaker relatives are defined over reads whose
+answer is a function of the database state
+\cite{DBLP:journals/cacm/EswaranGLT76,DBLP:journals/jacm/Papadimitriou79,DBLP:books/aw/BernsteinHG87,DBLP:conf/sigmod/BerensonBGMOO95,DBLP:conf/icde/AdyaLO00,DBLP:conf/podc/CrooksPAC17}:
+a read of an item returns its stored value, and a predicate read, such
+as ``all accounts of one branch,'' returns the stored items that satisfy
+the predicate \cite{DBLP:journals/tods/FeketeLOOS05}. A top-$k$
+similarity read strains this theory twice, once in its mechanisms and
+once in its definitions. First, its predicate is defined by its own
+result. The read depends on the ball around the query whose radius is
+the distance of its $k$-th answer; the radius is unknown until the read
+finishes, and every closer insertion shrinks it. Protecting a predicate
+read from a \emph{phantom}, a concurrent insertion that it should have
+returned \cite{DBLP:journals/cacm/EswaranGLT76}, needs the predicate in
+advance: predicate locking for multidimensional indexes locks the
+regions that a query names
+\cite{DBLP:conf/sigmod/KornackerMH97,DBLP:conf/icde/ChakrabartiM98,DBLP:conf/sigmod/ChakrabartiM99,DBLP:conf/dasfaa/SongLKY05},
+and key-range locking locks the gaps between keys of a total order
+\cite{DBLP:conf/vldb/Mohan90,DBLP:conf/vldb/Lomet93,DBLP:journals/tods/Graefe10},
+which vectors lack. Second, production stores answer with approximate
+indexes
+\cite{DBLP:journals/pami/MalkovY20,DBLP:conf/nips/SubramanyaDSKK19,DBLP:journals/pami/JegouDS11}:
+the same items, indexed differently or searched with another budget
+(the number of candidates a search keeps), yield another answer,
+so the read is not a function of the state. ``The answer a
+serial execution would have produced'' is then undefined, and so is the
+promise of repeatable read that a repeated query gets the
+same answer \cite{DBLP:conf/vldb/Mohan90}.
+
+\paragraph{The gap in practice}
+We ran read-think-write against \res[N]{A1.nstores} vector stores and
+through the add operation of Mem0 (\S\ref{sec:anomalies}). Without
+protection the stores keep \ri{A1.none.min} to \ri{A1.none.max}
+duplicate memories per 100 new facts, and Mem0 keeps
+\ra{A9.concurrent.dup}, against \ra{A9.serial.dup} when the calls
+run one at a time. Snapshot isolation, which PostgreSQL offers as repeatable read
+\cite{DBLP:journals/pvldb/PortsG12}, changes nothing, because each
+transaction's snapshot lacks the other's insertion. Serializable
+similarity reads are offered by one configuration we study,
+PostgreSQL with pgvector \cite{pgvector}, which MemGPT also
+supports as its archival store \cite{DBLP:journals/corr/abs-2310-08560}. Its
+serializable snapshot isolation records what each read scanned in order
+to detect conflicting writes
+\cite{DBLP:conf/sigmod/CahillRF08,DBLP:journals/pvldb/PortsG12}, but
+pgvector's indexes do not report it, so PostgreSQL falls back to one
+predicate lock on the entire index for every similarity read: two
+transactions with almost opposite queries abort each other, and at
+16 concurrent tasks a transaction aborts \ri{A5.ssi.aborts} times on average. Worse, the
+fallback is unsound for this index. PostgreSQL checks an insertion for
+conflicts before pgvector links the new element into the graph, so a
+reader that starts in between neither finds the element nor detects
+a conflict. We reproduce the duplicate commit deterministically,
+observe it in \ra{A6.hammer.rate}\% of tightly timed pairs, and close
+the gap with an eight-line patch, which we reported to the pgvector
+maintainers \cite{pgvectorissue}.
+
+\paragraph{Re-execution removes the race but is wasteful}
+The textbook remedy is optimistic validation
+\cite{DBLP:journals/tods/KungR81}: at commit, run the read again, and
+if the answer changed, think again on the new one. This
+\emph{re-execution validation} removes the race but pays a model call
+for every change. When several agents work on related items, the
+answer changes during the thinking time for \ri{C2.changed.min}\% to
+\ri{C2.changed.max}\% of the tasks (\S\ref{sec:eval-save}), and many of
+these changes leave the old answer nearly as close to the query as the
+new one. The question is when a changed answer is still good enough,
+and what accepting it guarantees.
+
+\paragraph{Admissible, not repeatable}
+We define isolation relative to the approximation that the application
+already accepts. In the ratio form of approximate nearest neighbor
+search \cite{DBLP:conf/stoc/IndykM98}, an answer is
+\emph{$c$-admissible} if, for every $i$, its $i$-th item is at most $c$
+times as far from the query as the true $i$-th nearest neighbor; at
+$c=1.1$, each item may be 10\% farther. An execution is
+\emph{\cser{}} if, in some serial order, every answer that a
+transaction acted on, its \emph{held answer}, is $c$-admissible in the
+state left by the transactions before it. For $c=1$, exact reads and distinct distances
+this is serializability; for $c>1$ isolation promises what the index
+promised and nothing more. What is repeatable is admissibility, not
+the answer itself.
+
+\paragraph{Which writes conflict}
+The weaker promise pays off, as Figure~\ref{fig:teaser} illustrates. A concurrent insertion changes the exact answer whenever
+it lands among the $k$ nearest items, but on its own it makes the held answer
+inadmissible only if it lands inside a \emph{conflict radius} that is
+at most $1/c$ of the read's radius and often much smaller. Unrelated,
+or \emph{background}, writes rarely land there. The writes that do are
+mostly \emph{siblings}: items about the same thing as the read, such as
+another agent's rendering of the same fact or the next fact of the same
+conversation. A validation that tests admissibility instead of identity
+therefore lets many changed answers stand; how often it must reject
+one depends on the siblings in the write stream. We make the following four contributions:
+\Needspace{4\baselineskip}
+\begin{itemize}
+\item \textbf{Evidence (\S\ref{sec:anomalies}).} The duplicate race
+  across stores and an agent-memory framework, and the coarseness and
+  unsoundness of serializable snapshot isolation over pgvector.
+\item \textbf{Semantics and system (\S\ref{sec:semantics}).}
+  $c$-serializability, the separation it preserves under threshold
+  deduplication, and a validation protocol whose safety theorem makes
+  isolation and approximation compose: if every answer of the store has
+  approximation ratio at most $\rho$ ($\rho=1$ for an exact search), every
+  execution is $(c\rho)$-serializable. \sys{} implements it
+  over unmodified stores, with an auditor that checks every held
+  answer against exact search.
+\item \textbf{Conflict theory (\S\ref{sec:theory}).} An exact
+  characterization of the conflicting insertions and a conflict law for
+  sibling and background writes. The isolation that a tolerance buys is
+  governed by the sibling dimension of the write stream (how tightly
+  siblings cluster around a read), not by the intrinsic dimension of
+  the data, and the law's inputs can be estimated before anything runs.
+\item \textbf{Evaluation (\S\ref{sec:eval}).} On
+  \res[N]{env.ndatasets} text streams, \res[N]{F1.nstores} stores, and
+  \res[N]{env.nbaselines} baselines from five families, \sys{} at
+  $c=1.1$ cuts the token overhead of isolation from
+  \ri{C3.tokover.exact.min}\% to \ri{C3.tokover.exact.max}\% to
+  \ri{C3.tokover.c110.min}\% to \ri{C3.tokover.c110.max}\% with two LLMs, lets through only \res[N]{C2.dense.extra} duplicates beyond re-execution in
+  \res[000{,}000]{C2.dense.tasks} replayed tasks, all on one data set, and keeps LoCoMo answer
+  quality within \ra{C4.c110.absdiff.max} F1 points of re-execution; identity-sensitive decisions pay
+  a measurable price. The conflict law predicts conflict probabilities
+  on LoCoMo and AG News within \ra{D3.errs.min} to \ra{D3.errs.max} points,
+  against \ri{D3.errx.min} to \ri{D3.errx.max} when all writes count as
+  background.
+\end{itemize}
+
+\paragraph{Relation to prior work}
+The protocol keeps the skeleton of optimistic validation
+\cite{DBLP:journals/tods/KungR81}; what is new is its test, the
+guarantee the test gives, and the theory that predicts how often it
+fails. Epsilon serializability
+\cite{DBLP:conf/sigmod/PuL91,DBLP:journals/tkde/RamamrithamP95} and
+conits \cite{DBLP:journals/tocs/YuV02} bound the numeric error of a
+read, and relaxed concurrent objects
+\cite{DBLP:conf/opodis/AfekKY10,DBLP:conf/popl/HenzingerKPSS13} bound
+how far an operation strays from sequential behavior; admissibility
+bounds a ranked set, by a distance ratio at every rank, against a serial order of
+multi-operation transactions. Precision locks
+\cite{DBLP:conf/sigmod/JordanBB81} and the predicate locks above need
+the predicate before the read; for a similarity read and one insertion,
+Corollary~\ref{cor:radius} derives it from the read's own distances.
+The full version~\cite[App.~G]{ariadnefull} covers related work.
+
+%% ====================================================================
+\section{Preliminaries}
+\label{sec:setting}
+
+\paragraph{Shared agent memory}
+A store holds a finite set $S$ of items, each with an identifier and a
+vector; $\dist$ is a metric on the vectors. We write $\delta_i(S,q)$ for
+the $i$-th smallest distance from a query vector $q$ to the items of
+$S$. Throughout the evaluation, vectors are unit-normalized embeddings
+and $\dist$ is the chord distance, which is $\sqrt{2}$ times the square
+root of the cosine distance that pgvector reports.
+
+\paragraph{Similarity reads}
+A similarity read $\Read(q,k)$, for $k\le|S|$, returns a list
+$A=(a_1,\dots,a_k)$ of distinct items in non-decreasing distance from
+$q$. An exact index returns a true top-$k$. Graph indexes such as HNSW (hierarchical navigable small world graphs)
+\cite{DBLP:journals/pami/MalkovY20,DBLP:journals/is/MalkovPLK14,DBLP:journals/pvldb/FuXWC19,DBLP:journals/pvldb/WangXYW21,DBLP:journals/tkde/LiZSWLZL20}
+trade accuracy for speed: HNSW links each item to about $M$ neighbors,
+and a search keeps $\mathit{ef}$ candidates, its \emph{search budget}.
+Their quality is usually reported as recall; we use the ratio form
+\cite{DBLP:conf/stoc/IndykM98} at every rank, against the exact top-$k$.
+
+\begin{definition}[$c$-admissible answer]
+\label{def:adm}
+For a tolerance $c\ge 1$, a list $A=(a_1,\dots,a_k)$ of distinct items
+of $S$ in non-decreasing distance from $q$ is a \emph{$c$-admissible
+answer} of $\Read(q,k)$ in state $S$, written $A\in\Adm_c(S,q,k)$, if
+$\dist(q,a_i)\le c\,\delta_i(S,q)$ for all $i\le k$. The
+\emph{approximation ratio} of any such list, admissible or not, is
+$\rhoa(A\mid S,q)=\max_{i}\,\dist(q,a_i)/\delta_i(S,q)$ ($0/0=1$),
+the least such $c$ ($1$ exactly for a true top-$k$ list, above $1$ otherwise).
+\end{definition}
+
+\paragraph{Transactions and executions}
+A transaction $T$ issues similarity reads, computes on their answers
+outside the store, and issues writes: insertions, which create new
+items, deletions of items in its answers, and replacements (a deletion
+and an insertion). In a
+\emph{read-think-write} transaction the computation is a call to a
+language model, and the writes depend on the answers in a way the store
+cannot inspect; a deduplicating agent, for instance, inserts its
+observation $q$ only if the nearest item of its answer is farther than
+a threshold $\tau$. We state thresholds in cosine distance, the unit the stores report;
+the analysis uses the chord distance.
+We call the answer that a transaction acted on its
+\emph{held answer}. We assume that writes are buffered and applied
+atomically at commit, so a transaction is described by its held answers
+and its write set. An \emph{execution} consists of an initial state
+$S_0$ and a set of committed transactions; aborted transactions write
+nothing and are not part of it. For a total order $\pi$ of
+the transactions, $S^\pi_j$ is the state after applying the write sets
+of the first $j$ transactions in that order. Table~\ref{tab:notation}
+lists the notation, and the full version~\cite[App.~H]{ariadnefull} all symbols and terms.
+
+\begin{table}[t]
+\caption{Notation.}
+\label{tab:notation}
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lp{0.62\columnwidth}l@{}}
+\toprule
+Symbol & Meaning & Sec.\\
+\midrule
+$S$, $S_0$ & state (set of stored items), initial state & \ref{sec:setting}\\
+$\dist$, $\delta_i(S,q)$ & distance; $i$-th smallest distance from $q$ to $S$ & \ref{sec:setting}\\
+$\Read(q,k)$ & read of the $k$ nearest items to query $q$ & \ref{sec:setting}\\
+$M$, $\mathit{ef}$ & HNSW degree; search budget & \ref{sec:setting}\\
+$A$, $F$ & held answer; fresh answer at validation & \ref{sec:setting}, \ref{sec:protocol}\\
+$c$ & tolerance ($c\ge1$) & \ref{sec:setting}\\
+$\Adm_c(S,q,k)$ & set of $c$-admissible answers & \ref{sec:setting}\\
+$\rhoa(A\mid S,q)$, $\rho$ & ratio of $A$ in $S$; index's ratio bound & \ref{sec:setting}, \ref{sec:protocol}\\
+$T$, $\tau$ & transaction; deduplication threshold & \ref{sec:setting}\\
+$\pi$, $S^\pi_j$ & serial order; state after its first $j$ transactions & \ref{sec:setting}\\
+$\sqsubseteq_c$ & validation test & \ref{sec:protocol}\\
+$r_1,\dots,r_k$ & distances of the exact answer & \ref{sec:theory}\\
+$t$, $p$, $y$ & distance, rank, and position $\ln(r_k/t)$ of an in-ball insertion & \ref{sec:theory}\\
+$\Rc(q)$ & conflict radius & \ref{sec:theory}\\
+$D$, $\Ds$ & intrinsic dimension; sibling dimension & \ref{sec:theory}\\
+$\alpha$, $x$, $\sigma$ & $\Ds/D$; $c^{-D}$; sibling share & \ref{sec:theory}\\
+$P_\alpha(c)$ & conflict probability of one in-ball insertion & \ref{sec:theory}\\
+$n$, $N$ & background writes overlapping a read; stored items & \ref{sec:theory}\\
+$h_\ell$, $D_\ell$ & lag kernel: in-ball probability and sibling dimension at stream lag $\ell$ & \ref{sec:theory}\\
+$o_\ell$ & writes at lag $\ell$ that overlap a read & \ref{sec:theory}\\
+$\nu$ & expected in-ball insertions per read & \ref{sec:theory}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%% ====================================================================
+\section{Similarity Reads Under Existing Isolation}
+\label{sec:anomalies}
+
+\subsection{The race without protection}
+\label{sec:race}
+
+\paragraph{Workload}
+We measure current stores under read-think-write transactions
+(setup: \S\ref{sec:eval-setup}). A stream of 600 new facts arrives at a store that holds 10{,}000
+memories. In this \emph{fan-out} workload, each fact is observed by one, two, or four agents (with
+probability 0.5, 0.3, 0.2), and each agent writes its own rendering of
+the fact, simulated by perturbing the fact's vector: copies of one fact
+lie at cosine distance about 0.04, different facts more than 0.25
+apart. Each agent reads its $k=10$ nearest memories, thinks for 0.2\,s
+on average, and inserts its rendering unless the nearest memory lies
+within cosine distance $\tau=0.15$. The copies of a fact arrive within
+one thinking time, tasks arrive at the rate that keeps 16 in flight
+when none aborts or waits (80 per second), and latency counts from a
+task's arrival.
+Any serial execution stores exactly 600 memories, so every additional
+row is a duplicate caused by the race. A second workload uses real
+text: each labeled duplicate cluster of Quora
+Question Pairs \cite{DBLP:conf/iclr/WangSMHLB19} is one fact (3{,}000
+facts, 100{,}000 memories). Real paraphrases can lie farther apart than
+$\tau$ and are then stored even by a serial execution, so there we count
+the rows beyond a serial execution of the same tasks.
+
+\begin{table}[t]
+\caption{Duplicates stored per 100 new facts (0 in every serial
+  execution; real questions: rows beyond it), mean of three seeds at
+  16 concurrent tasks.
+  Re-read: check again after thinking (\S\ref{sec:baseline}). $^{\dagger}$Here the re-read's snapshot predates the lock
+  (\S\ref{sec:system}).}
+\label{tab:race}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Store and isolation & \shortstack{no\\protection} & \shortstack{re-read,\\no lock} & \shortstack{re-read\\under lock}\\
+\midrule
+pgvector, read committed & \ra{A1.pgrc.none} & \ra{A1.pgrc.reread} & \ra{A1.pgrc.lock} \\
+pgvector, repeatable read & \ra{A1.pgrr.none} & \ra{A1.pgrr.reread} & \ra{A1.pgrr.lock}$^{\dagger}$ \\
+Qdrant & \ra{A1.qdrant.none} & \ra{A1.qdrant.reread} & \ra{A1.qdrant.lock} \\
+Chroma & \ra{A1.chroma.none} & \ra{A1.chroma.reread} & \ra{A1.chroma.lock} \\
+Milvus & \ra{A1.milvus.none} & \ra{A1.milvus.reread} & \ra{A1.milvus.lock} \\
+LanceDB & \ra{A1.lancedb.none} & \ra{A1.lancedb.reread} & \ra{A1.lancedb.lock} \\
+Weaviate & \ra{A1.weaviate.none} & \ra{A1.weaviate.reread} & \ra{A1.weaviate.lock} \\
+FAISS (in process) & \ra{A1.faiss.none} & \ra{A1.faiss.reread} & \ra{A1.faiss.lock} \\
+\midrule
+pgvector, real duplicate questions & \ra{A3.qqp.none} & \ra{A3.qqp.reread} & \ra{A3.qqp.lock} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Result}
+Every store duplicates a large share of the facts
+(Table~\ref{tab:race}). Repeatable read does no better than read
+committed, because each transaction's snapshot lacks the other's row.
+On real paraphrases the re-read halves the excess and the lock removes
+almost nothing more: the rest is not a race between the check and the insert. The rate depends
+on the workload, not on the load: on pgvector it is
+\ri{A1.pgrc.none.c4} and \ri{A1.pgrc.none.c32} at 4 and 32 concurrent
+tasks, and it does not change with the thinking time or the retrieval
+depth $k$, and moves by up to eight points, without a trend, with the size of the store. Among the timing parameters only
+the spread of the copies' arrivals relative to the thinking time
+matters: the rate is \ri{A2.jitter025} when the copies arrive within a
+quarter of the thinking time and \ri{A2.jitter100} when they spread
+over 100 thinking times (\appExp). With model calls of seconds,
+any fact that several agents see within seconds is at risk.
+
+\paragraph{Deletions, replacements, and Mem0}
+Replacements and deletions add further anomalies. On the AG News stream
+with 64 agents and a mix of 60\% insertions, 20\% replacements of the
+nearest memory, 10\% deletions, and 10\% read-only tasks (40 seeds),
+\ra{A4.none.diff}\% of the unprotected tasks take an action that no
+serial execution in commit order takes: two agents insert near
+duplicates, or an agent acts on a memory that was deleted while it
+thought. Validating at commit that the items a transaction read still
+exist, as object-granularity concurrency control for agents does
+\cite{DBLP:journals/corr/abs-2606-15376,DBLP:journals/corr/abs-2605-17076},
+leaves \ra{A4.objects.diff}\%, because it cannot see insertions. The
+race also reaches the users of memory frameworks through their public
+interface: concurrent calls to the add operation of Mem0
+\cite{DBLP:conf/ecai/ChhikaraKASY25} on
+one shared user store keep \ra{A9.concurrent.dup} duplicates per 100 facts,
+against \ra{A9.serial.dup} when they run one at a time.
+
+\subsection{Serializable isolation over pgvector}
+\label{sec:ssi-cost}
+
+\paragraph{Granularity}
+PostgreSQL with pgvector is the only configuration in our study that
+offers serializable similarity reads. Its serializable snapshot
+isolation (SSI) detects read-write conflicts through predicate locks
+that a scan takes on what it reads \cite{DBLP:journals/pvldb/PortsG12},
+and an access method that does not implement predicate locking, as
+pgvector's HNSW and IVFFlat do not, gets a lock on the entire index for
+every scan \cite{readmessi}. Inspecting the lock table after one read
+with $k=10$ accordingly shows a single relation-level predicate lock on
+the HNSW index (\res[0{,}000]{A6.locks.hnsw.pages} pages) and tuple
+locks on the ten returned rows, where an equality lookup on a B-tree
+locks one leaf page. Two transactions whose queries are almost
+antipodal, and whose answers therefore share no item, still conflict:
+each reads and then inserts, and one of them is aborted as if both
+had read the same rows.
+
+\begin{table}[t]
+\caption{Read-think-write on pgvector at 16 concurrent tasks (three
+  seeds, runs of their own). ``dupl.'': stored duplicates per 100 facts; aborting a transaction
+  that thinks inside it repeats its model call. Blue: \sys{} (\S\ref{sec:semantics}); red: failure costs.}
+\label{tab:ssi}
+\small
+\setlength{\tabcolsep}{3.2pt}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Mode & \shortstack{dupl./\\100} & \shortstack{aborts\\per task} & \shortstack{calls\\per task} & \shortstack{latency (s)\\p50 / p99}\\
+\midrule
+read committed & \hb \ra{A5.rc.dup} & \rb{A5.rc.aborts2} & \rb{A5.rc.calls} & \rb{A5.rc.p50} / \rb{A5.rc.p99}\\
+serializable, retry & \ra{A5.ssi.dup} & \hb \ra{A5.ssi.aborts1} & \hb \ra{A5.ssi.calls} & \hb \ra{A5.ssi.p50} / \ra{A5.ssi.p99}\\
+serializable, backoff & \ra{A5.ssibo.dup} & \hb \ra{A5.ssibo.aborts1} & \hb \ra{A5.ssibo.calls} & \hb \ra{A5.ssibo.p50} / \ra{A5.ssibo.p99}\\
+serializable, short txn. & \ra{A5.ssishort.dup} & \rb{A5.ssishort.aborts2} & \rb{A5.ssishort.calls} & \rb{A5.ssishort.p50} / \rb{A5.ssishort.p99}\\
+global lock, whole txn. & \ra{A5.locklong.dup} & \rb{A5.locklong.aborts2} & \rb{A5.locklong.calls} & \hb \ra{A5.locklong.p50} / \ra{A5.locklong.p99}\\
+\midrule
+B-tree key, serializable & \ra{A8.kser.dup} & \rb{A8.kser.aborts} & n/a & n/a\\
+\midrule
+re-read under lock & \ra{A5.lockshort.dup} & \rb{A5.lockshort.aborts2} & \rb{A5.lockshort.calls} & \rb{A5.lockshort.p50} / \rb{A5.lockshort.p99}\\
+\rowcolor{hlours}\sys{}, $c=1.1$ & \ra{A5.av110.dup} & \rb{A5.av110.aborts2} & \rb{A5.av110.calls} & \rb{A5.av110.p50} / \rb{A5.av110.p99}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:ssi} quantifies the cost. With immediate retry a task
+aborts \ri{A5.ssi.aborts} times on average, and each abort repeats a
+model call: median latency rises from \rb{A5.rc.p50}\,s to
+\ra{A5.ssi.p50}\,s, and about \ri{A5.ssi.gaveup} of the
+\res[0{,}000]{A5.ssi.tasks} tasks of each run give up after 200 aborts. Exponential
+backoff lowers the aborts to \ri{A5.ssibo.aborts} per task but leaves
+the median latency at \ra{A5.ssibo.p50}\,s. The control row isolates
+the cause: on a scalar key with a B-tree index, SSI resolves the same
+race with \rb{A8.kser.aborts} aborts per task. Similarity reads lack a
+granule \cite{DBLP:conf/ds/GrayLPT76} between ``the ten rows'' and
+``the whole index.''
+
+\paragraph{Unsoundness}
+\label{sec:ssi-unsound}
+Keeping the model call outside the transaction avoids the aborts:
+read, think, then re-read and insert in a short serializable transaction. Aborts fall to \rb{A5.ssishort.aborts2} per task, but
+\ra{A5.ssishort.dup} duplicates per 100 facts remain, impossible
+serially (no serial order of the tasks writes them twice): SSI over
+pgvector is coarse and unsound.
+
+\paragraph{Cause}
+For an access method without predicate locking, PostgreSQL's
+\texttt{index\_insert} checks for conflicting predicate locks on the
+index and only then calls the access method's insert routine. An HNSW
+insertion first searches the graph for the new element's neighbors and
+only then links the element. A reader whose scan begins in this
+interval takes its predicate lock after the writer's check and cannot
+reach the element; had it reached the element, it would have found the
+heap tuple invisible and reported the conflict. The reader-to-writer
+dependency is lost and no dangerous structure \cite{DBLP:conf/sigmod/CahillRF08} is detected
+(Figure~\ref{fig:window}), although the SSI documentation requires
+every index insertion to conflict with a concurrent scan whose
+re-execution would return the new row \cite{readmessi}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_s_05_ssi_window}
+\Description{Space-time diagram of two transactions. T1 searches, runs the conflict check, performs the graph search of its insertion, links the new element and commits. T2 takes its predicate lock and scans after T1's check and before T1 links the element, misses it, inserts and commits. The interval between T1's check and its link is shaded, and a marker shows where the patched check runs.}
+\caption{The missed dependency (schematic). $T_1$'s conflict check
+  precedes its graph search; $T_2$ takes its predicate lock after that
+  check and cannot reach $T_1$'s element, so both commit. Checking again
+  after linking closes the window.}
+\label{fig:window}
+\end{figure}
+
+\paragraph{Reproduction}
+Two serializable transactions each read the $k=10$ nearest items and
+insert unless one lies within $\tau$, on near-duplicate vectors; every
+serial order stores one row. Pausing $T_1$ with a debugger at the entry
+of the HNSW insert routine, running $T_2$ to commit, and resuming $T_1$
+stores both rows in \ri{A6.hole.dup} of \ri{A6.hole.trials} trials, and
+in \ri{A6.control.dup} of \ri{A6.control.trials} if $T_2$ starts after
+$T_1$'s insert has returned. Without a debugger,
+\ra{A6.hammer.rate}\% of \res[0{,}000]{A6.hammer.pairs} tightly timed
+pairs store both rows (95\% interval \ra{A6.hammer.lo} to
+\ra{A6.hammer.hi}), and one heavier index configuration, which lengthens
+the insertion to \ra{A6.grid.max.ms}\,ms, raises the share to
+\ra{A6.grid.max.rate}\%. For $M\ge16$ a fresh search in the final
+state finds both rows, so the misses are not recall errors. With an
+advisory lock around each transaction the count is \ri{A6.advisory.dup}
+of \res[0{,}000]{A6.advisory.pairs} pairs, and without the index
+\ri{A6.seqscan.dup} of \res[0{,}000]{A6.seqscan.pairs}. Repeating the
+conflict check after the element is linked reduces the anomaly to
+\ri{A6.patched.dup} of \res[0{,}000]{A6.patched.pairs} pairs and
+makes the paused scenario abort. The window belongs to the fallback
+path, not to vector search: the same pause produces a double commit on
+SP-GiST (\ri{A6.generic.spgist} of \ri{A6.generic.trials}) and BRIN
+(\ri{A6.generic.brin} of \ri{A6.generic.trials}), which also lack
+predicate locking, but not on a B-tree (\ri{A6.generic.btree} of
+\ri{A6.generic.trials}), whose check runs under the lock on the leaf
+page it inserts into. A general remedy therefore belongs in that path
+of the engine, which assumes that an insertion is visible to scans when
+its check is made.
+
+\paragraph{A related gap in GiST}
+PostgreSQL's GiST index does take predicate locks on the pages a search
+visits. Still, two transactions that search for a point outside all
+bounding boxes both find nothing, both insert the point, and both
+commit, in \ri{A7.out.eq} of \ri{A7.trials} trials with a plain
+interleaving and no instrumentation; \appPG{} gives the likely
+mechanism and the remaining tests.
+
+\subsection{A simple remedy and its limit}
+\label{sec:baseline}
+
+For threshold deduplication a simple remedy suffices: after thinking,
+take a lock, re-read, and write only if the decision still holds. At
+read committed it removes every race duplicate on every store
+(Table~\ref{tab:race}) without an extra model call
+(Table~\ref{tab:ssi}), because a threshold decision can be recomputed
+from the second read without the model.
+
+When the decision is a language model's judgment over the retrieved
+items, the re-read can only tell the transaction whether to trust the
+decision it already holds. Demanding an identical answer repeats the
+model call whenever the retrieved set changed, which happens for
+\ri{C2.changed.min}\% to \ri{C2.changed.max}\% of the tasks
+(\S\ref{sec:eval-save}), and on an approximate index identity is not
+even the right criterion: one state can yield different lists. Sections~\ref{sec:semantics} and~\ref{sec:theory} answer when a changed answer is
+acceptable, what accepting it guarantees, and how often it is not.
+
+%% ====================================================================
+\section{Admissibility-Based Isolation}
+\label{sec:semantics}
+
+\subsection{Definition}
+
+\begin{definition}[$c$-serializability]
+\label{def:cser}
+An execution is \emph{\cser{}} if there is a total order $\pi$ of its
+transactions such that every held answer $A$ of a read $\Read(q,k)$
+of the $j$-th transaction in $\pi$ satisfies
+$A\in\Adm_c(S^\pi_{j-1},q,k)$, the state just before it.
+\end{definition}
+
+The definition is state-based, in the style of client-centric isolation
+\cite{DBLP:conf/podc/CrooksPAC17,DBLP:conf/concur/CeroneBG15}: the order must \emph{explain} each held answer by
+a state, and an approximate answer is explained by any state in which
+it is admissible. Equivalently, running the transactions one at a time
+in the order $\pi$ against a store that may return any $c$-admissible
+answer, each shown its held answers, reproduces their writes if the
+transactions are deterministic (the model's randomness fixed)
+(\appProofs). For $c=1$ and pairwise distinct distances, $\Adm_1$ contains one
+list, and the definition reduces to the classical requirement that
+every read return what it returns in the serial execution
+\cite{DBLP:journals/jacm/Papadimitriou79,DBLP:books/aw/BernsteinHG87}. Every \cser{} execution is
+$c'$-serializable for $c'\ge c$, and all orders that satisfy the
+definition yield the same final state: $S_0$ with every insertion added
+and every deletion removed (\appProofs). Deciding view serializability
+is NP-complete in general \cite{DBLP:journals/jacm/Papadimitriou79};
+we do not search over orders, and the protocol and the auditor use the
+commit order. The definition does not refer to the index, whose answers
+depend on insertion order and budget: admissibility
+states exactly what the read promised to the agent that issued it, and nothing more.
+
+\paragraph{What is preserved}
+Admissibility weakens application invariants by a bounded factor;
+for deduplication the factor is $c$. Call a transaction a \emph{$\tau$-deduplicating insertion} if it issues
+one read $\Read(q,k)$ and inserts $q$ only when $\dist(q,a_1)>\tau$. Call a
+state $s$-separated if any two of its items are at distance greater
+than $s$.
+
+\begin{proposition}[Separation]
+\label{prop:sep}
+If $S_0$ is $(\tau/c)$-separated and all transactions of a \cser{}
+execution are $\tau$-deduplicating insertions, the final state is
+$(\tau/c)$-separated.
+\end{proposition}
+\begin{proof}
+If the $j$-th transaction in $\pi$ inserts $q$, then
+$\dist(q,a_1)>\tau$, and admissibility gives
+$\delta_1(S^\pi_{j-1},q)\ge \dist(q,a_1)/c>\tau/c$, so $q$ is farther than $\tau/c$ from all earlier items; induct on $j$.
+Insertions commute, so the final state is the last state of the order.
+\end{proof}
+
+The bound is tight (\appProofs). Under snapshot isolation no positive
+bound holds: two transactions with the same $q$ both find no item within
+$\tau$ and both insert $q$ (\S\ref{sec:race} measures this). Coordination is unavoidable for
+such an invariant \cite{DBLP:journals/pvldb/BailisFFGHS14}, and application-level checks without
+it fail under weak isolation \cite{DBLP:conf/sigmod/BailisFFGHS15,DBLP:conf/sigmod/WarszawskiB17}.
+
+\subsection{Validation protocol}
+\label{sec:protocol}
+
+Algorithm~\ref{alg:av}, \emph{admissibility validation}, enforces
+$c$-serializability up to the error of the validation read, for
+transactions that buffer their writes. It is serial-validation
+optimistic concurrency control \cite{DBLP:journals/tods/KungR81}. The read phase takes no lock.
+At commit the transaction takes a commit lock, repeats each of its
+reads, and compares its held answer $A$ with the fresh answer
+$F=(f_1,\dots,f_k)$ by the test
+\[
+A\sqsubseteq_c F \;\iff\; |A|=|F|,\ A\subseteq S,\ \text{and}\
+\dist(q,a_i)\le c\,\dist(q,f_i)\ \text{for all } i,
+\]
+where $S$ is the current state. If every read passes, the writes are
+applied under the lock. Otherwise it releases the lock and
+thinks again on the fresh answers, at no extra read;
+after 30 failed \emph{rounds} (loop passes) it aborts without writing. A single-read, read-only transaction skips validation and is
+serialized at its read.
+
+\begin{algorithm}[t]
+\caption{Admissibility validation for one transaction $T$}
+\label{alg:av}
+\small
+\begin{algorithmic}[1]
+\State $A_u \gets \Read(q_u,k_u)$ for each read $u=1,\dots,m$ \Comment{no lock}
+\Loop
+  \State $W \gets \textsc{Think}(A_1,\dots,A_m)$ \Comment{model call; writes buffered}
+  \If{$T$ is read-only and $m=1$} \Return \EndIf
+  \State acquire commit lock
+  \State $F_u \gets \Read(q_u,k_u)$ for each read $u$
+  \If{$A_u \sqsubseteq_c F_u$ for all $u$}
+    \State apply $W$; release lock; \Return
+  \EndIf
+  \State release lock; abort after 30 failures; $A_u \gets F_u$ for all $u$
+\EndLoop
+\end{algorithmic}
+\end{algorithm}
+
+\begin{theorem}[Safety]
+\label{thm:safety}
+Let every transaction run Algorithm~\ref{alg:av} under one commit lock,
+with validation reads after the lock is granted, on a store whose
+reads see every write set applied before them, each in full. If $T$ commits
+and $F$ is the fresh answer of its read $\Read(q,k)$ in the state
+$S$ at validation, with ratio $\rho_F=\rhoa(F\mid S,q)$, then its held
+answer $A$ satisfies $\rhoa(A\mid S,q)\le c\,\rho_F$, and the bound is
+attained. Consequently, if every answer the store returns is
+$\rho$-admissible in the state it reads, every execution is
+$(c\rho)$-serializable in commit order.
+\end{theorem}
+\begin{proof}
+The commit lock makes validations and write applications of different
+transactions mutually exclusive, so $S$ results from the write sets of
+exactly the transactions that committed before $T$, and $T$'s writes
+are applied to $S$ before any later validation. The test gives
+$A\subseteq S$ and, for every $i$,
+$\dist(q,a_i)\le c\,\dist(q,f_i)\le c\,\rho_F\,\delta_i(S,q)$.
+\AppProofs{} places the read-only transactions in the order and gives
+an instance of equality.
+\end{proof}
+
+Three consequences follow. The read phase needs no isolation: whatever
+$A$ was, it commits only if it is $(c\rho_F)$-admissible. With an exact
+validation read ($\rho=1$) the protocol is \cser{}; we call this
+variant \emph{certified}. Re-execution validation commits only when
+$A=F$, which passes at $c=1$: it is only $\rho$-serializable.
+Isolation and approximation thus compose multiplicatively.
+
+\paragraph{Why the test is a distance ratio at every rank}
+The test is the most permissive sound one: if $F$ is exact, then
+$\dist(q,f_i)=\delta_i(S,q)$ for every $i$, so $A\sqsubseteq_c F$ holds
+exactly when $A\in\Adm_c(S,q,k)$, and a test that accepts any further
+answer commits an inadmissible one. Identifier overlap is such a test: if a near duplicate of the query is inserted, $F$ and
+$A$ still share $k-1$ of $k$ items while $\rhoa(A\mid S,q)$ is
+arbitrarily large. Testing only the radius
+$\dist(q,a_k)\le c\,\dist(q,f_k)$ can accept the same insertion.
+\S\ref{sec:eval-cost} shows that both miss most duplicate races.
+
+\paragraph{Deletions and replacements}
+If an item of $A$ was deleted, $A\not\subseteq S$ and the test fails;
+\sys{} checks that the held items still exist together with the
+validation read. Deleting an item outside $A$ can only increase the
+$\delta_i$, so it never invalidates an answer. Conflicts therefore come
+from insertions, which \S\ref{sec:theory} analyzes.
+
+\paragraph{Progress}
+If the index returns the same answer for the same state and query, a
+validation fails only because another transaction committed in
+between, so some transaction always makes progress; a given transaction
+can still fail repeatedly and abort (\S\ref{sec:eval-perf}).
+
+\subsection{Implementation in \sys{}}
+\label{sec:system}
+
+\sys{} is a Python layer between agents and an unmodified vector
+store that uses only its similarity search, writes, and a lock.
+
+\paragraph{Validator}
+The validator implements Algorithm~\ref{alg:av}. A transaction object
+records each read with its answer and buffers the writes. At commit \sys{} takes the commit lock,
+re-issues the recorded reads, evaluates $\sqsubseteq_c$ on the returned
+distances, checks that held items still exist if deletions can
+occur, and either applies the buffered writes or returns the fresh
+answers, and the caller repeats its model call or, at the round
+limit, aborts. Tolerance $c$
+is set per transaction and may differ by operation (strict for
+replacements, loose for insertions). \sys{} runs unchanged
+on \res[N]{F1.nstores} stores.
+
+\paragraph{Commit lock}
+On PostgreSQL the commit lock is a transaction-scoped advisory lock, so
+the validation reads and the writes run in one short transaction and
+\sys{} needs no change to the engine; a client that fails inside
+the critical section rolls back and releases the lock. That transaction
+must run at read committed. At repeatable read its snapshot is taken by
+the statement that requests the lock, before the lock is granted, and
+the validation read does not see the writes it waited for: the
+protocol then stores \ra{A1.pgrr.lock} duplicates per 100 facts
+(Table~\ref{tab:race}). On stores without transactions
+\sys{} uses a lock of its own. The critical section spends
+\ra{G1.vread}\,ms on pgvector in the validation read ($k=10$),
+\res[0.000]{G1.pred} in the predicate, and \ra{G1.write} writing.
+
+\paragraph{Auditor}
+Because all writes commit under the lock, the commit order is total;
+\sys{} logs it with the held answers of each transaction. The auditor
+replays the log, reconstructs the exact state at every commit, computes
+exact answers by exhaustive search, recomputes the distances of the
+logged answers, and reports for every committed read its approximation
+ratio and that of its fresh answer. It thus separates what the
+index missed from what isolation let through, which a recall
+measurement confounds. All quality numbers in \S\ref{sec:eval} come
+from the auditor. Faults planted in the logs of correct runs show that
+it flags every fault that violates the safety bound, and deliberately
+broken protocols show up in its statistics, as duplicates or stale
+fresh answers (\appAudit).
+
+%% ====================================================================
+\section{Which Writes Conflict, and How Often}
+\label{sec:theory}
+
+Algorithm~\ref{alg:av} repeats a model call whenever the test fails.
+This section characterizes the insertions that make it fail and derives
+how often they occur, for exact reads; \S\ref{sec:eval} measures the
+effect of index error.
+
+\subsection{Characterization}
+
+Let $A$ be the exact answer of $\Read(q,k)$ in $S$, with distances
+$0<r_1<\dots<r_k$ (ties are broken as in \appProofs), and put $r_0=0$.
+An insertion $v$ with $t=\dist(q,v)\ge r_k$ does not change the
+top-$k$. Otherwise we call $v$ an \emph{in-ball} insertion and define
+its rank $p=1+|\{i: r_i<t\}|\le k$, its place in the new list.
+
+\begin{theorem}[Characterization]
+\label{thm:char}
+After an in-ball insertion at distance $t$ and rank $p$, the held answer $A$
+remains $c$-admissible in the new state $S\cup\{v\}$ if and only if
+\[
+r_p\le c\,t \quad\text{and}\quad r_i\le c\,r_{i-1}\ \text{ for all } p<i\le k .
+\]
+\end{theorem}
+\begin{proof}
+The new sorted distances are $\delta'_i=r_i$ for $i<p$, $\delta'_p=t$,
+and $\delta'_i=r_{i-1}$ for $i>p$. The condition
+$r_i\le c\,\delta'_i$ is trivial for $i<p$ and gives the two stated
+conditions for $i=p$ and $i>p$.
+\end{proof}
+
+The new item must not be much closer than the item it displaces, and
+the items it pushes down must not be much farther than their
+predecessors. Both conditions collapse into one radius.
+
+\begin{corollary}[Conflict radius]
+\label{cor:radius}
+Let $r_0=0<r_1$ and $\Rc(q)=\frac1c\max\{\,r_i : 1\le i\le k,\ r_i>c\,r_{i-1}\}$, which
+is defined because $i=1$ qualifies. An insertion at distance $t$ makes
+$A$ inadmissible, a \emph{conflict}, if and only if $t<\Rc(q)$. In
+particular $r_1/c\le \Rc(q)\le r_k/c$.
+\end{corollary}
+\begin{proof}
+Let $j$ be the largest index with $r_j>c\,r_{j-1}$. An insertion of
+rank $p<j$ leaves the gap at $j$ in the list, and has
+$t\le r_{j-1}<r_j/c$. One of rank $j$ meets no later gap and violates
+the first condition exactly if $t<r_j/c$. One of rank $p>j$ meets no
+gap and has $r_p\le c\,r_{p-1}\le c\,t$, so it is admissible, and
+$t\ge r_{p-1}\ge r_j\ge\Rc(q)$; one at $t\ge r_k$ leaves the answer unchanged.
+\end{proof}
+
+Re-execution validation protects the whole ball of radius $r_k$.
+Tolerance shrinks the protected ball by at least the factor $c$, and to
+radius $r_1/c$ when consecutive neighbor distances differ by at most
+the factor $c$: in
+Figure~\ref{fig:teaser}(b) the insertion is inside the read's ball
+but outside the conflict disk, and harmless. For a set $V$ of insertions admissibility requires
+$r_i\le c\,\delta_i(S\cup V,q)$ for all $i$; the radius form does not
+extend, because insertions outside $\Rc$ add up.
+
+\subsection{A conflict law with sibling and background writes}
+\label{sec:law}
+
+\paragraph{Model}
+We describe positions around $q$ by the mass of the ball they span.
+Assume that near $q$ the data has intrinsic dimension $D$, so that a
+distance ratio $c$ corresponds to a mass ratio $c^{D}$, and that the
+stored points form a homogeneous Poisson process in this coordinate
+\cite{DBLP:conf/nips/LevinaB04,DBLP:conf/kdd/AmsalegCFGHKN15,DBLP:conf/sisap/Houle17,DBLP:conf/stoc/KargerR02,DBLP:conf/icdt/BeyerGRS99}. A concurrent in-ball insertion is one of
+two kinds.
+A \emph{background} write is unrelated to the read: it is exchangeable
+with the stored points, hence uniform in the mass coordinate. A
+\emph{sibling} write is about the same thing as the read, a rendering
+of the same fact or the next fact of the same conversation: its radial
+density around $q$ is proportional to $t^{\Ds-1}$ with a \emph{sibling
+dimension} $\Ds\le D$, so $(t/r_k)^{\Ds}$ is uniform on $[0,1]$ and it
+concentrates near $q$. In both cases the position of the insertion is
+independent of how the neighbors are arranged in the ball.
+Let $x=c^{-D}$ and $\alpha=\Ds/D\in(0,1]$; background writes have $\alpha=1$.
+
+\begin{theorem}[Conflict law]
+\label{thm:law}
+Under the model, an in-ball insertion with dimension ratio $\alpha$ has rank $p$
+with probability
+\[
+\theta_\alpha(p)=\frac{\alpha\,\Gamma(p-1+\alpha)\,\Gamma(k)}{\Gamma(p)\,\Gamma(k+\alpha)},
+\]
+and leaves the answer $c$-admissible with rank $p$ with probability
+\[
+\varphi_\alpha(p)=\frac{\alpha\,(1-x^{\,p-1+\alpha})}{p-1+\alpha}\;
+\prod_{i=p}^{k-1}\frac{i\,(1-x^{\,i+\alpha})}{i+\alpha} .
+\]
+The conflict probability is $P_\alpha(c)=1-\sum_{p=1}^{k}\varphi_\alpha(p)$,
+and a mixture with sibling share $\sigma$ conflicts with probability
+\mbox{$\sigma P_\alpha(c)+(1-\sigma)P_1(c)$}.
+\end{theorem}
+
+The proof (\appProofs) writes Theorem~\ref{thm:char} in mass
+coordinates, where the ratios of consecutive neighbor masses are
+independent Beta variables, so the expectation factorizes over ranks.
+Simulation agrees on \ri{D1.cells} settings
+($|z|\le\ra{D1.maxz}$).
+
+\paragraph{Consequences}
+For $\alpha=1$ the law reduces to the exchangeable case, with uniform
+rank and $P_1(c)=1-\frac1k\sum_{p}\prod_{i=p}^{k}(1-x^i)=x/k+O(x^2)$:
+conflicts vanish exponentially in the intrinsic dimension. Sibling
+writes with $\alpha<1$ behave differently. They become the new nearest
+neighbor with probability
+$\theta_\alpha(1)=\Gamma(1+\alpha)\Gamma(k)/\Gamma(k+\alpha)>1/k$ ($k\ge2$), and
+such a write violates its own rank condition with probability exactly
+$c^{-\Ds}$. For large $c$ and $\sigma>0$ the conflict probability is
+therefore of order $\sigma\,\theta_\alpha(1)\,c^{-\Ds}$:
+asymptotically, \emph{the isolation that a tolerance $c$ buys is governed by the
+sibling dimension $\Ds$ of the write stream, not by the intrinsic
+dimension $D$ of the data}.
+
+\paragraph{The background rate needs no fitting}
+A write \emph{overlaps} a read if it commits between the read and its
+validation. If $n$ background writes, exchangeable with the
+$N$ stored items, overlap a read, each falls into the ball with
+probability $k/(N+1)$: a read expects $n\,k/(N+1)$ background
+in-ball insertions, with uniform ranks.
+
+\paragraph{Semi-parametric form}
+Real neighborhoods are not homogeneous. For prediction we therefore
+keep the sibling model but use the read's actual distances. By
+Corollary~\ref{cor:radius}, a sibling write conflicts with probability
+$(\Rc(q)/r_k)^{\Ds}$. The background component is evaluated by treating
+each of the read's own neighbors in turn as the inserted point. The
+only fitted quantities are the sibling dimensions (and, for two
+sibling scales, their shares), estimated by maximum likelihood from the
+positions $y=\ln(r_k/t)$ of observed in-ball insertions, predicted
+to be exponential with rate $\Ds$.
+
+\subsection{The lag kernel}
+\label{sec:kernel}
+
+Sibling writes are not a fixed share of the load. Whether a concurrent
+write is a sibling of a read depends on how far apart the two items are
+in the stream that produced them. For the item at lag $\ell$ from a
+read, before or after it in the same stream (the same conversation, the same feed), let
+$h_\ell$ be the probability that it falls into the read's ball and
+$D_\ell$ its sibling dimension. We call $(h_\ell,D_\ell)_{\ell\ge1}$
+the \emph{lag kernel} of the stream. Let $o_\ell$ be the expected number
+of writes at lag $\ell$ that overlap a read; it depends only on the
+schedule (the number of agents and their thinking time), not on the
+content of the items. With $n$ overlapping writes of other streams, a
+read expects
+\[
+\nu \;=\; \sum_{\ell} o_\ell\,h_\ell \;+\; \frac{n\,k}{N+1}
+\]
+in-ball insertions, a share $o_\ell h_\ell/\nu$ of them siblings
+of lag $\ell$. The kernel separates the contribution of the data from that of the
+schedule and predicts two things (\S\ref{sec:eval-law}). It is nearly
+the same at every concurrency level, although the pooled (lag-blind) sibling
+dimension is not, since a longer window admits larger lags. And it can be estimated
+before anything runs from the \emph{static stream}: for every item, test which
+later items fall into its exact top-$k$ ball among the items before it
+(assuming the kernel is the same for earlier and later lags).
+
+%% ====================================================================
+\section{Evaluation}
+\label{sec:eval}
+
+\begin{figure}[t]
+\centering
+\datafig[\columnwidth]{fig_s_09_calls_vs_c}
+\Description{Line plot. Extra model calls per 100 tasks fall by at least half from re-execution validation at the left to a tolerance of 1.5 at the right, one line per workload; the overlap test is shown as a separate column.}
+\caption{Extra model calls per 100 tasks: re-execution validation
+  (exact), admissibility validation (axis logarithmic in $c-1$), and the
+  overlap test at 90\% (right); pgvector.}
+\label{fig:calls}
+\end{figure}
+
+We ask how many model calls admissibility validation saves over
+re-execution (\S\ref{sec:eval-save}), what tolerance costs
+(\S\ref{sec:eval-cost}), whether this holds when language models
+decide (\S\ref{sec:eval-llm}), whether the conflict law predicts when
+validation fails (\S\ref{sec:eval-law}), how it compares with
+pessimistic and serializable alternatives (\S\ref{sec:eval-perf}), and
+which parts matter (\S\ref{sec:eval-abl}).
+
+\subsection{Setup}
+\label{sec:eval-setup}
+
+\paragraph{Systems}
+PostgreSQL \res[00.00]{env.pg} with pgvector \res[0.0.0]{env.pgvector}
+(HNSW, $M=16$, construction budget 64,
+$\mathit{ef}=40$) \cite{pgvector,postgres} is the default store. Portability
+experiments add Qdrant \cite{qdrant}, Chroma \cite{chroma}, Milvus
+\cite{milvuslite,DBLP:conf/sigmod/WangYGJXLWGLXYYZLCLZMGJWX21}, LanceDB \cite{lancedb}, Weaviate \cite{weaviate}, and FAISS
+\cite{DBLP:journals/tbd/DouzeGDJSMLHJ26}. Experiments run on
+\res[one server with NN cores and NNN GB of memory]{env.machine}, one
+for timing and one for counting and the models, one
+client thread per agent; \res[a server with N CPU cores]{env.vm} repeats the cost experiment: on the cells both ran,
+extra calls agree within \ra{X.machines.offset.bound}\% on average. Numbers are means over seeds; intervals are 95\% Student $t$ intervals of the mean unless noted. Shading: blue \sys{}, gray re-execution, red a failure or cost.
+
+\paragraph{Workloads}
+\S\ref{sec:anomalies} uses the fan-out workloads ($\tau=0.15$). The remaining
+sections replay text collections in their natural order, embedded with
+\res[a sentence embedding model]{env.embedder} \cite{DBLP:conf/emnlp/ReimersG19,DBLP:conf/acl/ChenXZLLL24,wordllama}.
+\emph{LoCoMo} \cite{DBLP:conf/acl/MaharanaLTBBF24} contains ten long conversations. The 5{,}882
+dialogue turns are the initial memory, and the 2{,}541 facts extracted
+from them are written in the order of their source turns. Each
+conversation is handled by a team of $g$ agents that take consecutive
+facts, giving $10g$ agents (L2, L4, L8 for $g=2,4,8$).
+\emph{AG News} \cite{DBLP:conf/nips/ZhangZL15} is replayed in file order, in which versions of
+one story from different outlets lie close together: the first
+60{,}000 items are the initial memory and the next 6{,}000 are written
+by 16 or 64 agents (A16, A64; A64k50 uses $k=50$).
+\emph{LongMemEval} \cite{DBLP:conf/iclr/WuWYZCY25} (LME4: 20{,}000 items and
+6{,}000 writes from 13 conversations, teams of four agents), a stream of
+Quora questions \cite{DBLP:conf/iclr/WangSMHLB19} (QQP64: 100{,}000 and
+6{,}000, 64 agents), and MS MARCO passages
+\cite{DBLP:journals/corr/abs-1611-09268} (MSM64: $10^6$ and 6{,}000, 64
+agents) vary content and scale. The first six
+have a pooled intrinsic dimension
+\cite{DBLP:conf/nips/LevinaB04,DBLP:conf/kdd/AmsalegCFGHKN15} of
+\ri{D3.lid.min} to \ri{D3.lid.max}.
+
+\paragraph{Transactions and protocols}
+Every task issues one top-$k$ read ($k=10$ unless stated), thinks, and
+inserts its item unless the nearest item of its answer lies within
+$\tau=0.10$. Thinking is a log-normal delay with mean 0.2\,s unless a
+model is called. We compare \sys{} with \res[NN]{env.nbaselines}
+baselines from five families: (i)~no isolation (\pol{none}), at read committed and repeatable read;
+(ii)~application-level remedies (re-read before the write with and
+without a lock; write, then verify); (iii)~pessimistic locking (a
+global lock across the thinking step; predicate locks on the read's
+ball, strict or with tolerance); (iv)~serializable snapshot isolation
+with immediate retry, backoff, or a short transaction; and
+(v)~optimistic validation inside Algorithm~\ref{alg:av} with other
+predicates: \pol{exact} (identical ordered identifiers, which is
+re-execution validation), \pol{set}, \pol{overlap} (at least 90\%
+common identifiers), identity of the top one or three items, a ratio
+test on the $k$-th distance, the first distance, or the sum of
+distances only, and \pol{objects} (the items that were read still
+exist). \sys{} uses admissibility validation with
+$c\in\{1.02,1.05,1.1,1.2,1.5\}$, with an approximate or, in the
+certified variant, an exact validation read. Each configuration runs
+with three seeds; the main workloads of \S\ref{sec:eval-save} (A64,
+L2, L4) run with eight, and the model and law runs
+(\S\ref{sec:eval-llm}, \S\ref{sec:eval-law}) with five.
+
+\paragraph{Decision proxies}
+To measure how a stale answer would change a decision without the
+variance of a model, the auditor evaluates five functions of an answer:
+\pol{dup} (is the nearest item
+within $\tau$), \pol{tag} (majority label of the $k$ items),
+\pol{link} (identity of the nearest item), \pol{top3} (identity of the
+three nearest), and \pol{set} (identity of all $k$). For each committed
+transaction we compare the decision on its held answer with the
+decision on the exact answer at commit; the same comparison for the
+fresh answer gives the \emph{index floor}.
+\S\ref{sec:eval-llm} replaces the proxies by the decisions of two
+language models.
+
+\subsection{Model calls saved}
+\label{sec:eval-save}
+
+During the thinking time the retrieved set changes for
+\ri{C2.changed.min}\% to \ri{C2.changed.max}\% of the tasks. Changes
+caused only by the index, with the exact top-$k$ intact, account for
+\rb{C2.physonly.min}\% to \rb{C2.physonly.max}\% of the tasks: the
+history dependence of the index does not drive recomputation.
+
+Figure~\ref{fig:calls} shows the invocations that each predicate
+spends on recomputation, including repeated rounds. On LoCoMo and
+AG News, re-execution validation spends \ri{C1.exact.extra.min} to \ri{C1.exact.extra.max}
+extra calls per 100 tasks. A tolerance of $c=1.05$ saves
+\ri{C1.save105.min}\% to \ri{C1.save105.max}\% of them, $c=1.1$ saves
+\ri{C1.save110.min}\% to \ri{C1.save110.max}\%, and $c=1.2$ saves
+\ri{C1.save120.min}\% to \ri{C1.save120.max}\%. On LongMemEval, the
+question stream, and MS MARCO the saving at $c=1.1$ is
+\ri{C1.LME4.save110}\%, \ri{C1.QQP64.save110}\%, and
+\ri{C1.MSM64.save110}\%. Lowering $\mathit{ef}$ to 10 (recall at 10
+from \rb{C6.A64.ef40.recall} to \rb{C6.A64.ef10.recall} on AG News)
+raises the saving at $c=1.1$ by \res[0.0]{C6.A64.ef10.dsave} points. The 99th percentile of the
+task latency falls from \rb{C1.L8.exact.p99}\,s to
+\rb{C1.L8.c110.p99}\,s in L8 at $c=1.1$. Except for A64k50 at $c\le 1.05$, AG News
+gains less than LoCoMo (\S\ref{sec:eval-law}).
+
+\subsection{What tolerance costs}
+\label{sec:eval-cost}
+
+\begin{table}[t]
+\caption{Cost of each validation predicate (A64 on pgvector, mean of
+  eight seeds; the other configurations are in \appExp). ``Calls'':
+  extra model calls per 100 tasks. ``Dup.'': insertions per 100
+  tasks although the exact state at commit held an item
+  within the threshold. Next four columns: share of transactions (\%)
+  whose decision on the held answer differs from that on
+  the exact answer at commit (row \pol{exact}: the index floor);
+  $\rho_{99}$: 99th percentile of the held answer's ratio to the exact answer at commit.}
+\label{tab:cost}
+\small
+\setlength{\tabcolsep}{3.4pt}
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Predicate & Calls & Dup. & tag & link & top3 & set & $\rho_{99}$\\
+\midrule
+none & \ra{C1.A64.none.extra} & \hb \res[0.000]{C1.A64.none.dupw} & \rb{C1.A64.none.tag} & \rb{C1.A64.none.link} & \rb{C1.A64.none.top3} & \rb{C1.A64.none.set} & \rb{C1.A64.none.rho99}\\
+overlap & \ra{C1.A64.ov90.extra} & \hb \res[0.000]{C1.A64.ov90.dupw} & \rb{C1.A64.ov90.tag} & \rb{C1.A64.ov90.link} & \rb{C1.A64.ov90.top3} & \rb{C1.A64.ov90.set} & \rb{C1.A64.ov90.rho99}\\
+\midrule
+\rowcolor{hlref}exact & \ra{C1.A64.exact.extra} & \res[0.000]{C1.A64.exact.dupw} & \rb{C1.A64.exact.tag} & \rb{C1.A64.exact.link} & \rb{C1.A64.exact.top3} & \rb{C1.A64.exact.set} & \rb{C1.A64.exact.rho99}\\
+$c=1.02$ & \ra{C1.A64.c102.extra} & \res[0.000]{C1.A64.c102.dupw} & \rb{C1.A64.c102.tag} & \rb{C1.A64.c102.link} & \rb{C1.A64.c102.top3} & \rb{C1.A64.c102.set} & \rb{C1.A64.c102.rho99}\\
+$c=1.05$ & \ra{C1.A64.c105.extra} & \res[0.000]{C1.A64.c105.dupw} & \rb{C1.A64.c105.tag} & \rb{C1.A64.c105.link} & \rb{C1.A64.c105.top3} & \rb{C1.A64.c105.set} & \rb{C1.A64.c105.rho99}\\
+\rowcolor{hlours}$c=1.1$ & \ra{C1.A64.c110.extra} & \res[0.000]{C1.A64.c110.dupw} & \rb{C1.A64.c110.tag} & \rb{C1.A64.c110.link} & \rb{C1.A64.c110.top3} & \rb{C1.A64.c110.set} & \rb{C1.A64.c110.rho99}\\
+$c=1.2$ & \ra{C1.A64.c120.extra} & \res[0.000]{C1.A64.c120.dupw} & \rb{C1.A64.c120.tag} & \rb{C1.A64.c120.link} & \rb{C1.A64.c120.top3} & \rb{C1.A64.c120.set} & \rb{C1.A64.c120.rho99}\\
+$c=1.5$ & \ra{C1.A64.c150.extra} & \hb \res[0.000]{C1.A64.c150.dupw} & \rb{C1.A64.c150.tag} & \rb{C1.A64.c150.link} & \rb{C1.A64.c150.top3} & \rb{C1.A64.c150.set} & \rb{C1.A64.c150.rho99}\\
+\rowcolor{hlours}certified, $c=1.1$ & \ra{C1.A64.cert110.extra} & \res[0.000]{C1.A64.cert110.dupw} & \rb{C1.A64.cert110.tag} & \rb{C1.A64.cert110.link} & \rb{C1.A64.cert110.top3} & \rb{C1.A64.cert110.set} & \rb{C1.A64.cert110.rho99}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Duplicate races are still caught}
+Table~\ref{tab:cost} lists the costs. Up to $c=1.2$ the number of
+insertions made despite an existing near duplicate matches that of
+re-execution validation within \res[0.000]{C1.A64.dupw.maxdiff} per 100 tasks on A64, which is the residue the index itself leaves
+(\res[0.000]{C1.A64.exact.dupw} per 100 tasks on A64, \res[0.000]{C1.L4.exact.dupw} on
+L4). A near duplicate enters at rank one, almost always at a small fraction of the
+previous nearest distance, so it lies inside the conflict radius for
+any reasonable $c$. The overlap test accepts it, since nine of ten
+identifiers are unchanged, and so does a test of the radius alone: they
+let through \res[0.000]{C1.A64.ov90.dupw} and \res[0.000]{E1.radius110.dupw}
+duplicates per 100 tasks on A64, where \pol{none} has
+\res[0.000]{C1.A64.none.dupw} (Tables~\ref{tab:cost} and~\ref{tab:abl}).
+Over all nine configurations (three seeds each, \res[000{,}000]{C2.dense.tasks} replayed tasks), $c=1.1$
+accepts \res[N]{C2.dense.extra} duplicates that re-execution rejects, all on MS MARCO,
+whose near duplicates lie beyond $\tau/c$ (Proposition~\ref{prop:sep}).
+
+\begin{figure*}[t]
+\centering
+\datafig[\textwidth]{fig_s_10_pareto}
+\Description{Five panels, one per decision function. Each plots the share of accepted decisions that differ from the decision on the exact answer against the model calls saved relative to re-execution validation. The c-admissible test traces a curve from the index floor at zero saving; the overlap and radius tests lie above it; tests of the nearest identities and of the first distance are drawn as points and thin curves; a horizontal dotted line marks the index floor.}
+\caption{Model calls saved relative to re-execution against accepted
+  decisions that differ from those on the exact answer, per predicate and
+  decision (one panel each), on replayed A64 runs (three seeds). The
+  $c$-admissible test traces a curve as $c$ grows; for \pol{dup} and
+  \pol{link} overlap and radius lie above it or touch it. Dotted: index floor over all transactions, whether accepted or not.}
+\label{fig:pareto}
+\end{figure*}
+
+\paragraph{The predicate frontier}
+Because the auditor logs the held and the fresh answer of each
+transaction, it can replay any predicate on one run.
+Figure~\ref{fig:pareto} does so for a dense grid of $c$ and for all
+alternatives. For \pol{dup} and \pol{link}, the tests in common use, overlap and the radius, lie above the $c$-admissible curve (overlap at 0.8 touches it on \pol{link}). A test of the
+nearest identities is exact for a decision that depends only on them
+(the nearest item decides \pol{dup} and \pol{link}), and the first
+distance alone comes close to it; both are tailored to such decisions
+and let the rest of the answer drift (Table~\ref{tab:abl}). An oracle that repeats the call only when the decision changes spends
+\ra{C1.A64.olink.extra} calls for \pol{link}, where $c=1.1$ spends
+\ra{C1.A64.c110.extra} calls for the same decision.
+
+\paragraph{The approximate contract is kept}
+Theorem~\ref{thm:safety} bounds the ratio of a held answer by $c$
+times the ratio of its fresh answer. The audit checked this
+inequality on \res[000{,}000]{B1.checked} commits (all tolerances,
+three search budgets, two stores, mixed operations, multiple reads)
+and found \ri{B1.violations} violations. In the certified runs whose
+writes are all insertions, \ri{B1.sepviol} pairs of stored items are
+closer than $\tau/c$ in chord distance, the bound of Proposition~\ref{prop:sep}. The
+share of transactions whose held answer is not $c$-admissible is indistinguishable from the share of
+fresh answers that are not: \rb{C1.A64.c105.viol}\% against
+\rb{C1.A64.c105.violF}\% on A64 at $c=1.05$, \rb{C1.A64.c110.viol}\%
+against \rb{C1.A64.c110.violF}\% at $c=1.1$, and
+\rb{C1.L4.c110.viol}\% against \rb{C1.L4.c110.violF}\% on L4. The 90\% intervals of the paired
+difference span \res[0.00]{STAT.cert.lo.min} to \res[0.00]{STAT.cert.hi.max} points (\ri{STAT.cert.seeds} seeds per cell),
+inside the equivalence margin $\pm$\res[0.00]{STAT.cert.margin.min} (two one-sided tests). With an
+exact validation read the share is zero (save exact copies), and the
+critical section takes \ra{E4.exact.cs} instead of
+\ra{E4.ef40.cs}\,ms (Table~\ref{tab:abl}).
+
+\paragraph{Identity-sensitive decisions are not free}
+The proxies show where tolerance costs. Up to $c=1.2$, threshold
+decisions and the coarse labels of A64 change by at most \rb{C1.A64.tag.maxdiff} points. For \pol{link}, which
+depends on the single nearest item, $c=1.02$ adds at most
+\ra{C1.linkadd102.max} points to the index floor, $c=1.05$ adds
+\ra{C1.linkadd105.min} to \ra{C1.linkadd105.max}, and $c=1.1$ adds
+\ra{C1.linkadd110.min} to \ra{C1.linkadd110.max} across the six
+configurations. For \pol{set}, where any change of the retrieved items
+counts, every accepted change is a divergence. These proxies are
+pessimistic: real model decisions change less than \pol{link}
+(\S\ref{sec:eval-llm}). Tolerance is thus a dial with a defined
+meaning, not a free improvement. A rule of thumb
+follows from Theorem~\ref{thm:safety}: the index already
+returns answers whose ratio exceeds its 99th percentile
+(\rb{C1.L4.exact.rhoF99} on LoCoMo, \rb{C1.A64.exact.rhoF99} on AG News)
+once in a hundred reads, so a tolerance up to that value stays within
+the index's own error at the same search budget as the read.
+
+\subsection{When a language model decides}
+\label{sec:eval-llm}
+
+Two language models, GPT-4o mini and Qwen2.5-7B-Instruct on vLLM,
+make every decision with the prompt of Mem0
+\cite{DBLP:conf/ecai/ChhikaraKASY25}; thinking is the real call latency. The
+auditor asks the model again on the exact answer for
+\res[0{,}000]{C3.replay.n} tasks per run. The final memory of every
+seed answers the \res[0{,}000]{C4.questions} LoCoMo questions (L4) and the
+\res[000]{C4.lme.questions} LongMemEval questions of LME4 with GPT-4o mini
+(token F1 and a model judge).
+
+\begin{table}[t]
+\caption{Two models decide (L4, five seeds): extra calls per 100
+  tasks, tokens per task, changed decisions (\%), and F1 (\%;
+  four rows) of the final memory, answered by GPT-4o mini.}
+\label{tab:llm}
+\footnotesize
+\setlength{\tabcolsep}{2.6pt}
+\begin{tabular}{@{}lrrrrrrrr@{}}
+\toprule
+ & \multicolumn{4}{c}{GPT-4o mini} & \multicolumn{4}{c}{Qwen2.5-7B}\\
+\cmidrule(lr){2-5}\cmidrule(l){6-9}
+Predicate & Calls & Tok. & Chg. & F1 & Calls & Tok. & Chg. & F1\\
+\midrule
+none & \ra{C3.gpt.L4.none.extra} & \ri{C3.gpt.L4.none.tok} & \ra{C3.gpt.L4.none.changed} & \res[00.00]{C4.gpt.locomo.none.f1} & \ra{C3.qwen.L4.none.extra} & \ri{C3.qwen.L4.none.tok} & \ra{C3.qwen.L4.none.changed} & \res[00.00]{C4.qwen.locomo.none.f1}\\
+overlap & \ra{C3.gpt.L4.ov90.extra} & \ri{C3.gpt.L4.ov90.tok} & \ra{C3.gpt.L4.ov90.changed} & & \ra{C3.qwen.L4.ov90.extra} & \ri{C3.qwen.L4.ov90.tok} & \ra{C3.qwen.L4.ov90.changed} & \\
+\rowcolor{hlref}exact & \ra{C3.gpt.L4.exact.extra} & \ri{C3.gpt.L4.exact.tok} & \ra{C3.gpt.L4.exact.changed} & \res[00.00]{C4.gpt.locomo.exact.f1} & \ra{C3.qwen.L4.exact.extra} & \ri{C3.qwen.L4.exact.tok} & \ra{C3.qwen.L4.exact.changed} & \res[00.00]{C4.qwen.locomo.exact.f1}\\
+$c=1.05$ & \ra{C3.gpt.L4.c105.extra} & \ri{C3.gpt.L4.c105.tok} & \ra{C3.gpt.L4.c105.changed} & & \ra{C3.qwen.L4.c105.extra} & \ri{C3.qwen.L4.c105.tok} & \ra{C3.qwen.L4.c105.changed} & \\
+\rowcolor{hlours}$c=1.1$ & \ra{C3.gpt.L4.c110.extra} & \ri{C3.gpt.L4.c110.tok} & \ra{C3.gpt.L4.c110.changed} & \res[00.00]{C4.gpt.locomo.c110.f1} & \ra{C3.qwen.L4.c110.extra} & \ri{C3.qwen.L4.c110.tok} & \ra{C3.qwen.L4.c110.changed} & \res[00.00]{C4.qwen.locomo.c110.f1}\\
+$c=1.2$ & \ra{C3.gpt.L4.c120.extra} & \ri{C3.gpt.L4.c120.tok} & \ra{C3.gpt.L4.c120.changed} & & \ra{C3.qwen.L4.c120.extra} & \ri{C3.qwen.L4.c120.tok} & \ra{C3.qwen.L4.c120.changed} & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The savings carry over to both models (Table~\ref{tab:llm}): on L4,
+L8, and LongMemEval, $c=1.1$ removes \ri{C3.save110.min}\% to
+\ri{C3.save110.max}\% of the extra calls of re-execution, so the token
+overhead of isolation falls from between
+\ri{C3.tokover.exact.min}\% and \ri{C3.tokover.exact.max}\% to between
+\ri{C3.tokover.c110.min}\% and \ri{C3.tokover.c110.max}\%. The models'
+decisions, up to \ri{C3.targeted.max}\% of which update or delete
+one specific memory, sit between the proxies \pol{dup} and \pol{link}: at $c=1.1$
+at most \ra{C3.chg.c110.excess.max} points more of them differ from the
+decision on the exact answer than under re-execution (the floor that
+the index sets; one-sided 95\% upper bound \ra{C3.chg.c110.excess.hi.max}, paired over seeds), while without isolation \ra{C3.chg.none.excess.min}
+to \ra{C3.chg.none.excess.max} points more do. Downstream, the memory
+built at $c=1.1$ answers the LoCoMo questions within
+\rb{C4.c110.absdiff.max} F1 and \rb{C4.c110.jabsdiff.max} judge points of re-execution with both models
+(every 95\% F1 interval within
+$\pm$\rb{C4.c110.ci.max}), while the unprotected memory loses
+\rarng{C4.none.diff.min}{C4.none.diff.max} F1 points and
+\rarng{C4.none.jdiff.min}{C4.none.jdiff.max} judge points; the
+\res[00]{C4.lme.questions} LongMemEval questions are too few for a test.
+
+\subsection{Validating the conflict law}
+\label{sec:eval-law}
+
+All analyses here are exact-to-exact: for runs without isolation the
+auditor reconstructs the exact answer at read time and at commit and
+extracts every concurrent insertion inside the read's ball.
+
+\paragraph{The characterization is exact}
+For the \res[00{,}000]{B7.reads} reads with exactly one in-ball
+insertion, Theorem~\ref{thm:char} agrees with an
+admissibility test in all \res[000{,}000]{B7.ok} of
+\res[000{,}000]{B7.tot} combinations of read, $k$, and $c$.
+
+\paragraph{Most in-ball writes are siblings, and order creates them}
+The background rate $n\,k/(N+1)$, computed from the number of writes
+that overlap each read, accounts for only \ri{D3.bg.min}\% to
+\ri{D3.bg.max}\% of the observed in-ball insertions
+(Table~\ref{tab:law}). The rest are siblings. Controls on the
+same items show that the order of the stream creates them. In its
+natural order, A64 has \rb{D4.A64.natural.inball} in-ball insertions
+per read in these controls. Shuffling the stream, which keeps the items but moves
+related ones apart, leaves \rb{D4.A64.shuffle.inball}. Pooling
+the initial memory and the stream and splitting them at random, which
+makes the writes exchangeable with the stored data, leaves
+\res[0.000]{D4.A64.exch.inball}, within noise of the background rate of
+\res[0.000]{D4.A64.exch.bg} computed from the overlapping writes alone (paired relative difference
+\ra{STAT.D4.rel}\%, 90\% interval \ra{STAT.D4.lo}\% to \ra{STAT.D4.hi}\% over \ri{STAT.D4.seeds} runs, inside an
+equivalence margin of $\pm$25\%), and
+the ranks of these insertions are uniform (\appLaw).
+
+\begin{table}[t]
+\caption{Conflict law. Top: per configuration, the share of reads
+  with a concurrent in-ball insertion, the share of in-ball insertions
+  explained by the background rate, the fitted sibling dimensions, and
+  the largest absolute error (points, over $c\in\{1.02,\dots,2\}$)
+  of the predicted conflict probability of reads with one in-ball
+  insertion; conflict outcomes are never fitted. Bottom: predictions
+  for a run from which nothing was fitted: in-ball insertions per read
+  predicted / observed, and the largest conflict error as in the top half.}
+\label{tab:law}
+\small
+\setlength{\tabcolsep}{3.0pt}
+\begin{tabular}{@{}lrrlrrr@{}}
+\toprule
+ & & & & \multicolumn{3}{c}{max.\ error}\\
+\cmidrule{5-7}
+Config. & In-ball & bg. & $\Ds$ & exch. & \shortstack{closed\\form} & \shortstack{semi-\\param.}\\
+\midrule
+L2 & \ra{D3.L2.inball}\% & \ri{D3.L2.bg}\% & \ra{D3.L2.Ds1} & \ra{D3.L2.errx} & \ra{D3.L2.errc} & \cellcolor{hlours}\ra{D3.L2.errs}\\
+L4 & \ra{D3.L4.inball}\% & \ri{D3.L4.bg}\% & \ra{D3.L4.Ds1} & \ra{D3.L4.errx} & \ra{D3.L4.errc} & \cellcolor{hlours}\ra{D3.L4.errs}\\
+L8 & \ra{D3.L8.inball}\% & \ri{D3.L8.bg}\% & \ra{D3.L8.Ds1} & \ra{D3.L8.errx} & \ra{D3.L8.errc} & \cellcolor{hlours}\ra{D3.L8.errs}\\
+A16 & \ra{D3.A16.inball}\% & \ri{D3.A16.bg}\% & \ra{D3.A16.Ds2a}, \ra{D3.A16.Ds2b} & \ra{D3.A16.errx} & \ra{D3.A16.errc} & \cellcolor{hlours}\ra{D3.A16.errs}\\
+A64 & \ra{D3.A64.inball}\% & \ri{D3.A64.bg}\% & \ra{D3.A64.Ds2a}, \ra{D3.A64.Ds2b} & \ra{D3.A64.errx} & \ra{D3.A64.errc} & \cellcolor{hlours}\ra{D3.A64.errs}\\
+A64k50 & \ra{D3.A64k50.inball}\% & \ri{D3.A64k50.bg}\% & \ra{D3.A64k50.Ds2a}, \ra{D3.A64k50.Ds2b} & \ra{D3.A64k50.errx} & \ra{D3.A64k50.errc} & \cellcolor{hlours}\ra{D3.A64k50.errs}\\
+\midrule
+\multicolumn{4}{@{}l}{Prediction without fitting on the target} & \multicolumn{2}{r}{pred.\,/\,obs.} & error\\
+\midrule
+\multicolumn{4}{@{}l}{lag kernel of L8 $\to$ L4} & \multicolumn{2}{r}{\res[0.000]{T.lag.L8.L4.pred} / \res[0.000]{T.lag.L8.L4.obs}} & \ra{T.lag.L8.L4.err}\\
+\multicolumn{4}{@{}l}{lag kernel of A64 $\to$ A16} & \multicolumn{2}{r}{\res[0.000]{T.lag.A64.A16.pred} / \res[0.000]{T.lag.A64.A16.obs}} & \ra{T.lag.A64.A16.err}\\
+\multicolumn{4}{@{}l}{pooled parameters of L4 $\to$ L8} & \multicolumn{2}{r}{\hb \res[0.000]{T.window.L4.L8.pred} / \res[0.000]{T.window.L4.L8.obs}} & \ra{T.window.L4.L8.err}\\
+\multicolumn{4}{@{}l}{static stream $\to$ L4} & \multicolumn{2}{r}{\res[0.000]{T.static.L4.pred} / \res[0.000]{T.static.L4.obs}} & \ra{T.static.L4.err}\\
+\multicolumn{4}{@{}l}{static stream $\to$ L8} & \multicolumn{2}{r}{\res[0.000]{T.static.L8.pred} / \res[0.000]{T.static.L8.obs}} & \ra{T.static.L8.err}\\
+\multicolumn{4}{@{}l}{static stream $\to$ A64} & \multicolumn{2}{r}{\res[0.000]{T.static.A64.pred} / \res[0.000]{T.static.A64.obs}} & \ra{T.static.A64.err}\\
+\multicolumn{4}{@{}l}{parameters of L4 $\to$ A64 (other corpus)} & \multicolumn{2}{r}{\hb \res[0.000]{T.params.L4.A64.pred} / \res[0.000]{T.params.L4.A64.obs}} & \hb \ra{T.params.L4.A64.err}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Sibling dimensions}
+With the background share fixed at its first-principles value, one
+sibling dimension describes LoCoMo closely (largest Kolmogorov--Smirnov distance \res[0.000]{D3.L.ks.max};
+two scales fit better by BIC): $\Ds$ is \ra{D3.L2.Ds1},
+\ra{D3.L4.Ds1}, and \ra{D3.L8.Ds1} for L2, L4, and L8. AG News needs two
+scales everywhere, on A64 \ra{D3.A64.Ds2a} for versions of the same story and
+\ra{D3.A64.Ds2b} for items on the same topic. All are below the
+intrinsic dimension of \ri{D3.lid.min} to \ri{D3.lid.max}, the AG News scales far below. The fit uses
+positions only; the rank-one share, which it never
+sees, is predicted within \ra{D3.rank1.maxdiff} points (\appLaw). On synthetic streams with a
+planted sibling dimension its interval holds it in
+\ri{D2.inside} of \ri{D2.total} runs.
+
+\begin{figure}[t]
+\centering
+\datafig[\columnwidth]{fig_t_03_law_main}
+\Description{Two panels of conflict probability against the tolerance (horizontal axis logarithmic in c minus 1), one for a conversational stream and one for a news stream. In both, the semi-parametric sibling law follows the observed points within a few points, the closed form and the single-scale fit deviate more on the news stream, and the exchangeable model lies far below.}
+\caption{Probability that one concurrent in-ball insertion makes the
+  held answer inadmissible (horizontal axis logarithmic in $c-1$).
+  The sibling law is fitted to positions only.}
+\label{fig:law}
+\end{figure}
+
+\paragraph{Predicting conflicts}
+Figure~\ref{fig:law} and Table~\ref{tab:law} compare predicted and
+observed conflict probabilities for reads with one in-ball insertion.
+The exchangeable model is off by \ri{D3.errx.min} to \ri{D3.errx.max}
+points. The closed form of Theorem~\ref{thm:law} with the pooled
+intrinsic dimension is within \ra{D3.errc.L.min} to
+\ra{D3.errc.L.max} points on LoCoMo and \ra{D3.errc.A.min} to
+\ra{D3.errc.A.max} on AG News, where it overestimates the
+conflict probability up to $c=1.2$. The semi-parametric form is within \ra{D3.errs.min} to
+\ra{D3.errs.max} points on all six configurations. Over all reads,
+including those with several in-ball insertions, it predicts the share
+whose answer becomes inadmissible within \ra{D3.e2e.maxerr} points
+(\appLaw). On AG News the conflict
+probability falls with a log-log slope of \ra{D3.A64.tail} between
+$c=1.5$ and $c=2$, close to the smallest fitted sibling dimension,
+not the intrinsic one. This explains Figure~\ref{fig:calls}:
+near duplicates have a low sibling dimension, so on AG News tolerance
+buys isolation slowly.
+
+\begin{figure*}[t]
+\centering
+\datafig[\textwidth]{fig_t_05_lag_kernel}
+\Description{Four panels. Panels a and b are ridgeline plots of the position of in-ball insertions per stream lag for two streams, each ridge with a fitted exponential whose rate grows with the lag. Panel c plots the in-ball probability per lag bucket for several concurrency levels, which nearly coincide (the long A64 stream lies lower at short lags), with hollow markers for the estimate from the static stream. Panel d is a scatter of predicted against observed in-ball insertions per read: lag kernels transferred to fewer agents, the static stream, k and time lie near the diagonal; lag kernels transferred to more agents, pooled parameters on the conversational stream and parameters of the other collection lie off it.}
+\caption{The lag kernel. (a, b)~Position $y=\ln(r_k/t)$ of in-ball
+  insertions by stream lag, with fitted exponential (solid) and
+  background shape (dashed): $D_\ell$ grows with lag.
+  (c)~In-ball probability per lag at several concurrency levels;
+  hollow: static stream; A64-long: 30{,}000 writes; A256: 256 agents. (d)~Predicted (no fit on the target) against
+  observed in-ball insertions per read; marker: kind of transfer; marks of one run are offset.}
+\label{fig:lag}
+\end{figure*}
+
+\paragraph{The lag kernel transfers in-ball rates to fewer agents}
+Pooled parameters fitted at one concurrency level mispredict another
+(\ra{T.window.L4.L8.err} points from L4 to L8), because a longer window
+admits writes that are less related: the pooled $\Ds$ grows from
+\ra{D3.L2.Ds1} to \ra{D3.L8.Ds1} from L2 to L8. Resolved by lag
+(Figure~\ref{fig:lag}), the parameters are nearly the same at every
+concurrency level: the item at lag one falls into the read's ball with
+probability \ra{L.L2.h1}\%, \ra{L.L4.h1}\%, and \ra{L.L8.h1}\% in L2,
+L4, and L8, with dimension \ra{L.L2.D1}, \ra{L.L4.D1}, and
+\ra{L.L8.D1}; exchangeable items would do so with probability
+\rb{L.L4.hx}\%. A kernel estimated at L8 predicts the conflict
+probabilities of L4 within \ra{T.lag.L8.L4.err} points; from A64 to A16
+it predicts the in-ball rate but misses the conflict probabilities by
+\ra{T.lag.A64.A16.err} points. Toward more agents it overestimates the
+in-ball rate, by \ri{T.lag.L2.L8.dev}\% from L2 to L8 and
+\ri{T.lag.A16.A64.dev}\% from A16 to A64 (Figure~\ref{fig:lag}d). The kernel estimated from the static
+stream, with no execution at all, predicts the in-ball rate of the
+three runs in Table~\ref{tab:law} within \ra{T.static.inball.maxdev}\% and their conflict
+probabilities within \ra{T.static.L4.err} points on L4,
+\ra{T.static.L8.err} on L8, and \ra{T.static.A64.err} on A64. A
+deployment can thus estimate, before running any agent, how often its
+reads will conflict at a given tolerance (within
+\ra{T.static.err.max} points on L4, L8, and A64). Parameters
+do not transfer between collections (\ra{T.params.L4.A64.err}
+points): they are properties of the workload. On LoCoMo, conflicts come
+from a few co-arriving items about the same thing, not from
+load, which suggests one agent per run of adjacent items.
+
+\paragraph{Limits of the law}
+Kolmogorov--Smirnov tests do not reject the fitted position
+distribution on L4 ($p\ge\rb{D3.L4.ksp.min}$) but do on A64k50
+($p\le\res[0.000]{D3.A64k50.ksp.max}$) despite
+small distances, since insertions of one burst are dependent. The homogeneous closed
+form is a scaling law, not a predictor: it overestimates on AG News.
+By local intrinsic dimension, both forms err alike (\appLaw).
+
+\subsection{Throughput and pessimistic alternatives}
+\label{sec:eval-perf}
+
+\begin{figure}[t]
+\centering
+\datafig[0.9\columnwidth]{fig_s_11_scaling}
+\Description{Two log-log panels against the number of agents: throughput in tasks per second and 99th percentile latency, one line per protocol. Validation at c = 1.1 stays near the no-isolation line up to 256 agents and re-execution runs about a quarter below it from 16 agents; certified validation flattens from 16 agents, where its lock saturates; ball predicate locks fall far behind as their deadlocks grow; a lock across the thinking step stays flat; serializable isolation with backoff falls behind.}
+\caption{Throughput and tail latency as the number of agents grows
+  (AG News, pgvector, thinking time 0.2\,s).}
+\label{fig:scale}
+\end{figure}
+
+\paragraph{Scaling}
+Figure~\ref{fig:scale} varies the number of agents from 1 to 256. A
+lock held across the thinking step is serial by construction. At 64
+agents, serializable isolation with backoff reaches
+\ra{C5.a64.ssibo.tps} tasks per second and no isolation
+\ra{C5.a64.none.tps}. Validation at $c=1.1$ reaches
+\ra{C5.a64.c110.tps} (\ri{C5.a64.c110.rel}\% of no isolation) with a 99th-percentile
+latency of \rb{C5.a64.c110.p99}\,s; re-execution reaches
+\ra{C5.a64.exact.tps} (\ri{C5.a64.exact.rel}\%) and \rb{C5.a64.exact.p99}\,s.
+Both keep their share up to 256 agents (\ri{C5.a256.c110.rel}\% and
+\ri{C5.a256.exact.rel}\%), where $c=1.1$ holds the commit lock
+\ri{C5.a256.c110.held}\% of the time (\ri{C5.t2.a256.c110.held}\% with 2\,s
+calls). Certified validation, with an exact scan inside the lock,
+saturates it from 16 agents on (\ri{C5.a16.cert110.held}\%; with 2\,s calls
+from 128 on) and stays near \ri{C5.a256.cert110.tps} tasks per second.
+
+\paragraph{Optimistic versus pessimistic}
+Corollary~\ref{cor:radius} also specifies a lock: a ball of radius
+$r_k$ (strict) or $\Rc$ (tolerant) around each open read, which we
+implemented in the client with waiting writers and deadlock detection.
+On A64 (in-memory store), strict and tolerant ($c=1.1$) ball locks
+spend \ra{C10.A64.ball10.extra} and \ra{C10.A64.ball11.extra} extra
+calls per 100 tasks on deadlock victims, against
+\ra{C10.A64.av10.extra} and \ra{C10.A64.av11.extra} for certified
+validation, and wait \ra{C10.A64.ball11.wait}\,ms per task behind
+thinking readers. Tolerance divides the extra calls by
+\ra{C10.A64.ball.cut} for ball locks and by \ra{C10.A64.av.cut} for
+validation, and helps both on LoCoMo and AG News
+(\appExp): the gain comes from the semantics, and the optimistic
+skeleton multiplies it. Ball locks abandon tasks after 200
+aborts; validation abandoned no task, never waits for another agent's model
+call, and needed few rounds: with 16 agents reporting one hot fact
+and heavy-tailed thinking, at most
+\ri{C11.fan16.exact.maxrounds} under re-execution and
+\ri{C11.fan16.c120.maxrounds} at $c=1.2$, and on AG News at 256
+agents below the limit of 30.
+
+\subsection{Ablations and robustness}
+\label{sec:eval-abl}
+
+\begin{table}[t]
+\caption{Ablations on A64 (pgvector, $c=1.1$ unless stated), one
+  experiment per block, three seeds (lock scope: eight teams, ten
+  seeds). Columns as in Table~\ref{tab:cost}; ``c.s.'': time per task in
+  the critical section under the commit lock (ms).}
+\label{tab:abl}
+\footnotesize
+\setlength{\tabcolsep}{4.0pt}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Variant & Calls & Dup. & link & $\rho_{99}$ & c.s.\\
+\midrule
+\multicolumn{6}{@{}l}{\emph{Predicate}}\\
+\rowcolor{hlours}per-rank ratio (ours) & \ra{E1.c110.extra} & \res[0.000]{E1.c110.dupw} & \rb{E1.c110.link} & \rb{E1.c110.rho99} & \ra{E1.c110.cs}\\
+$k$-th distance only & \ra{E1.radius110.extra} & \hb \res[0.000]{E1.radius110.dupw} & \hb \rb{E1.radius110.link} & \hb \rb{E1.radius110.rho99} & \ra{E1.radius110.cs}\\
+first distance only & \ra{E1.rank1110.extra} & \res[0.000]{E1.rank1110.dupw} & \rb{E1.rank1110.link} & \hb \rb{E1.rank1110.rho99} & \ra{E1.rank1110.cs}\\
+sum of distances & \ra{E1.sum110.extra} & \hb \res[0.000]{E1.sum110.dupw} & \hb \rb{E1.sum110.link} & \hb \rb{E1.sum110.rho99} & \ra{E1.sum110.cs}\\
+\midrule
+\multicolumn{6}{@{}l}{\emph{Commit lock (eight teams)}}\\
+\rowcolor{hlours}global (ours) & \ra{E2.global.extra} & \res[0.000]{E2.global.dupw} & \rb{E2.global.link} & \rb{E2.global.rho99} & \ra{E2.global.cs}\\
+one lock per team & \ra{E2.group.extra} & \hb \res[0.000]{E2.group.dupw} & \rb{E2.group.link} & \rb{E2.group.rho99} & \ra{E2.group.cs}\\
+no lock & \ra{E2.nolock.extra} & \hb \res[0.000]{E2.nolock.dupw} & \rb{E2.nolock.link} & \rb{E2.nolock.rho99} & \ra{E2.nolock.cs}\\
+\midrule
+\multicolumn{6}{@{}l}{\emph{Search budget of the validation read}}\\
+$\mathit{ef}=10$ & \ra{E4.ef10.extra} & \res[0.000]{E4.ef10.dupw} & \rb{E4.ef10.link} & \rb{E4.ef10.rho99} & \ra{E4.ef10.cs}\\
+$\mathit{ef}=40$ (as the read) & \ra{E4.ef40.extra} & \res[0.000]{E4.ef40.dupw} & \rb{E4.ef40.link} & \rb{E4.ef40.rho99} & \ra{E4.ef40.cs}\\
+$\mathit{ef}=400$ & \ra{E4.ef400.extra} & \res[0.000]{E4.ef400.dupw} & \rb{E4.ef400.link} & \rb{E4.ef400.rho99} & \ra{E4.ef400.cs}\\
+exact (certified) & \ra{E4.exact.extra} & \res[0.000]{E4.exact.dupw} & \rb{E4.exact.link} & \rb{E4.exact.rho99} & \hb \ra{E4.exact.cs}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Ablations}
+Table~\ref{tab:abl} removes one part of the design at a time. The
+ratio must be tested at every rank: testing the $k$-th distance alone
+accepts duplicate races, the first alone lets the
+ratio drift at other ranks, and the sum
+hides a large change at one rank behind small ones.
+The commit lock must cover every writer: without it the race of
+\S\ref{sec:race} recurs (\rb{B5a.fan.nolock.dupw} against \rb{B5a.fan.correct.dupw} duplicate insertions per 100
+tasks on the fan-out workload), and one lock per team is unsafe when
+teams write about the same things. The search budget of the validation read
+sets $\rho$ in the guarantee $c\rho$ and the length of the critical
+section. Thinking again on the fresh answer saves the second read
+outside the lock; the extra calls agree within noise
+(difference \ra{E3.reread.more} per 100 tasks, 95\% Welch interval \res[0.00]{STAT.E3.lo} to
+\res[0.00]{STAT.E3.hi}, $p=\res[0.00]{STAT.E3.p}$).
+
+\paragraph{Robustness}
+\AppExp{} varies the rest. On all \res[N]{F1.nstores} stores
+the audit finds \ri{F1.violations} safety violations, and
+with \res[N]{F2.nother} other embedding models $c=1.1$ saves
+\ri{F2.other.save110.min}\% to \ri{F2.other.save110.max}\% of the extra calls. The
+saving holds with up to nine reads, for five
+thinking-time distributions and open-loop arrivals, for $k$ from 1 to
+100, with one process per agent, and under client failures in the
+critical section. With replacements and deletions, at most
+\res[0.00]{STAT.B4.excess.max} more actions per 100 tasks than under re-execution differ from a serial
+execution (one-sided 95\% Welch bound \res[0.00]{STAT.B4.hi.max} over all operation mixes).
+
+%% ====================================================================
+\section{Discussion and Conclusion}
+\label{sec:discussion}
+\label{sec:conclusion}
+
+\paragraph{Limitations and an in-engine design}
+\label{sec:limits}
+\sys{} validates under one commit lock, which bounds its write
+throughput by the critical section. Corollary~\ref{cor:radius}
+gives an in-engine design without it: a store registers open
+reads with their conflict radii and tests insertions against
+them, a reverse nearest-neighbor query
+\cite{DBLP:journals/corr/abs-1011-4955,DBLP:conf/icde/BohmOPY07}, which
+would also give SSI a sound, fine-grained granule for vector indexes.
+The guarantee is relative to the index unless certified. All stores
+are single-node; we used \res[N]{env.nllms} LLMs and
+one PostgreSQL version.
+
+\paragraph{Conclusion}
+Similarity reads fall outside database isolation: SSI over pgvector
+is coarse and unsound, and an approximate index
+leaves ``serializable'' undefined. Admissibility-based isolation closes
+the gap: it composes with index error, has predictable conflicts, and
+at $c=1.1$ spares \ri{C1.save110.min}\% to \ri{C1.save110.max}\% of
+the calls re-execution repeats (LoCoMo, AG News), costing at most
+\ra{C1.linkadd110.max} points on links and
+\ra{C3.chg.c110.excess.max} on model decisions, while it keeps
+\ri{C5.a256.c110.rel}\% of the throughput without isolation at 256
+agents, and the auditor finds \ri{F1.violations} violations of its bound on all
+\res[N]{F1.nstores} stores and in the safety experiment.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{pvldb20-ariadne}
+
+\end{document}

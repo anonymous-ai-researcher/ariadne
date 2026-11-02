@@ -1,0 +1,67 @@
+name: A11_simple_baselines
+doc: |
+  Question. How far do application-level remedies go, and where do they stop?
+  Remedies. re-read before the write (no lock); re-read under a lock and re-decide by rule (no extra model call: only possible when the
+    decision is a rule on distances); write first then verify and delete the own item if a duplicate is found (tie-break by id, or
+    delete whenever a duplicate is seen); object-granularity validation.  The same with a model-made decision (decider llm), where
+    "re-decide by rule" does not exist and the only general remedies are a lock across the think step or validation with re-thinking.
+  Report. dup_per_100_events / dup_written_per_100, lost_events (write-then-verify with tie-break "any" can delete both copies),
+    extra_calls_per_100, latency.
+base:
+  k: 10
+  tau_cos: 0.15
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+cases:
+- _name: fan
+  workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 10000, n_events: 600, conc: 16, think: 0.2, jitter: 1.0}
+- _name: A64
+  tau_cos: 0.1
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+- _name: L4-llm
+  tau_cos: 0.1
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+  decider: {kind: llm, model: '${LLM_MODEL:-gpt-4o-mini}', think: none}
+grid:
+  proto:
+  - _name: none
+    protocol: {kind: none}
+  - _name: reread
+    protocol: {kind: validate, policy: redecide, lock: none}
+  - _name: reread+lock
+    protocol: {kind: validate, policy: redecide}
+  - _name: write-verify-id
+    protocol: {kind: compensate, tiebreak: id}
+  - _name: write-verify-any
+    protocol: {kind: compensate, tiebreak: any}
+  - _name: objects
+    protocol: {kind: validate, policy: objects}
+  - _name: lock-long
+    protocol: {kind: lock_long}
+  - _name: av-exact
+    protocol: {kind: validate, policy: exact}
+  - _name: av-cadm1.1
+    protocol: {kind: validate, policy: 'cadm:1.1'}
+repeat: 3
+audits: [sep, serial]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: fan
+    workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 3000, n_events: 60, conc: 8, think: 0.02, jitter: 1.0}
+  - _name: L4-llm
+    tau_cos: 0.1
+    workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4, stream: 200}
+    decider: {kind: llm, mock: true, think: 'fixed:0.02', cache: results/llm_cache_mock.jsonl}
+  grid:
+    proto:
+    - _name: none
+      protocol: {kind: none}
+    - _name: reread+lock
+      protocol: {kind: validate, policy: redecide}
+    - _name: write-verify-id
+      protocol: {kind: compensate, tiebreak: id}
+    - _name: av-cadm1.1
+      protocol: {kind: validate, policy: 'cadm:1.1'}

@@ -1,0 +1,30 @@
+name: A6_ssi_soundness
+kind: script
+doc: |
+  Question. Is PostgreSQL SERIALIZABLE sound for pgvector index reads?  (a) which predicate locks a similarity read takes, (b) a
+    deterministic reproduction of a missed conflict with a debugger pause in the HNSW insertion, (c) how often the window is hit
+    without a debugger (stress test), as a function of how long an insertion takes (m, ef_construction: dose response), with an
+    advisory-lock control and a sequential-scan control, (d) the same debugger test for other index access methods, (d2) two
+    transactions with almost antipodal queries that read and insert (antipodal.py: one aborts in every trial; B-tree control),
+    (e) the same tests against a patched pgvector (patches/pgvector_ssi_recheck.patch) to show that the fix closes the window.
+  Report. locks: SIREAD lock granularity per access method.  hole: both-commit trials out of N, control 0.  hammer: anomalies per
+    pairs with a Wilson interval per (m, ef_construction).  patched: 0 anomalies with the patched library (build it and swap the
+    library file as printed by `python -m ariadne.pgtests.patched`; swap the stock library back afterwards).
+  Manual step (the numbers "with the fix" in the paper). The last command labels the installed library with its sha256 and writes
+    installed_library.jsonl.  After building and installing the patched library, run
+      python -m ariadne.pgtests.patched --run --pairs 3000 --trials 8 --expect-clean --out results/A6_ssi_soundness/patched_library.jsonl
+    paper/make_results.py reads the patched numbers from patched_library.jsonl and refuses them when its sha256 equals that of
+    installed_library.jsonl (that would be the stock library measured twice).
+  Scope. Observed on PostgreSQL 16.15 with pgvector 0.8.7 only; A10 repeats it across versions.  gdb and ptrace permission are needed
+    for hole and generic.
+commands: ['{py} -m ariadne.pgtests.locks --out {out}/locks.jsonl', '{py} -m ariadne.pgtests.hole --trials {trials} --out {out}/hole.jsonl', '{py} -m ariadne.pgtests.hole
+    --trials {trials} --index ivfflat --out {out}/hole_ivfflat.jsonl', '{py} -m ariadne.pgtests.hammer --pairs {pairs} --out {out}/hammer.jsonl', '{py}
+    -m ariadne.pgtests.hammer --pairs {pairs} --grid --out {out}/hammer_grid.jsonl', '{py} -m ariadne.pgtests.hammer --pairs {pairs} --mode advisory --out
+    {out}/hammer_advisory.jsonl', '{py} -m ariadne.pgtests.hammer --pairs {pairs} --index none --out {out}/hammer_seqscan.jsonl', '{py} -m ariadne.pgtests.hammer
+    --pairs {pairs} --index ivfflat --out {out}/hammer_ivfflat.jsonl', '{py} -m ariadne.pgtests.generic --trials 3 --out {out}/generic.jsonl', '{py} -m
+    ariadne.pgtests.antipodal --trials 20 --out {out}/antipodal.jsonl', '{py} -m ariadne.pgtests.patched --run --pairs {pairs} --trials {trials} --out {out}/installed_library.jsonl']
+vars: {trials: 8, pairs: 3000}
+smoke:
+  commands: ['{py} -m ariadne.pgtests.locks --smoke --out {out}/locks.jsonl', '{py} -m ariadne.pgtests.hole --smoke --out {out}/hole.jsonl', '{py} -m ariadne.pgtests.hammer
+      --smoke --out {out}/hammer.jsonl', '{py} -m ariadne.pgtests.generic --smoke --out {out}/generic.jsonl', '{py} -m ariadne.pgtests.antipodal --smoke
+      --out {out}/antipodal.jsonl']

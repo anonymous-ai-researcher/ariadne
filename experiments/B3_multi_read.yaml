@@ -1,0 +1,35 @@
+name: B3_multi_read
+doc: |
+  Question. Transactions with several similarity reads (context retrieval, query expansion): does validation cost grow, does safety hold?
+  Setup. 0, 1, 2, 4, 8 extra reads per task, from three sources (previous items of the team, random stored items, noisy copies of the
+    task's own vector).  Every read is validated; one invalid read makes the task think again.
+  Report. extra_calls_per_100 and critical-section time (cs_mean_ms, cs_vread_mean_ms) against the number of reads, per policy;
+    safety_theorem.violations (0).  Expect: redo rate grows roughly like 1 - (1 - p)^reads for exact, much slower for cadm.
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  protocol: {kind: validate}
+cases:
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+grid:
+  workload.extra_reads: [0, 1, 2, 4, 8]
+  workload.extra_source: [prev, random, expand]
+  protocol.policy: [none, exact, 'cadm:1.05', 'cadm:1.1', 'cadm:1.2']
+repeat: 3
+audits: [run]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+    store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  cases:
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  grid:
+    workload.extra_reads: [0, 2]
+    workload.extra_source: [prev]
+    protocol.policy: [exact, 'cadm:1.1']

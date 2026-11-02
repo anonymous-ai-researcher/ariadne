@@ -1,0 +1,43 @@
+name: D4a_exchangeable_controls
+doc: |
+  Question. Is the excess of conflicts over the i.i.d. prediction really caused by temporal locality of the stream?  Controls that
+    remove structure step by step, on the same items:
+    natural      the stream as it is;
+    block        blocks of 64 consecutive items shuffled (keeps short-range order, removes long-range order);
+    shuffle      stream order shuffled (siblings still exist but are far apart in time);
+    exchangeable initial memory and stream pooled and split at random (no sibling structure at all: the in-ball rate must equal the
+                 first-principles background n_c k / (N + 1) and ranks must be uniform).
+  Report. in_ball_insertions_per_read against expected_background_per_read, new_nearest_share_%, conflict probability at each c;
+    `python -m ariadne.law planted` accepts the exchangeable runs as pi = 0 controls.  Use 5 seeds: the rank-uniformity test needs them.
+vary_workload: true
+base:
+  k: 10
+  tau_cos: 0.0
+  store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate, policy: none}
+cases:
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+- _name: L80
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: single, agents: 80}
+grid:
+  order:
+  - {_name: natural}
+  - {_name: block64, workload.order: 'block:64'}
+  - {_name: shuffle, workload.order: shuffle}
+  - {_name: exchangeable, workload.exchangeable: true}
+repeat: 5
+audits: [law]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+  cases:
+  - _name: A64
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 8000, stream: 1500, teams: single, agents: 64}
+  grid:
+    order:
+    - {_name: natural}
+    - {_name: shuffle, workload.order: shuffle}
+    - {_name: exchangeable, workload.exchangeable: true, workload.base: 8000, workload.stream: 1500}
+  repeat: 1

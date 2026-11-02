@@ -1,0 +1,5 @@
+name: B5b_selftest
+kind: script
+doc: |
+  Offline half of B5: fault injection into the logs of correct runs (needs B1 or B5a_broken_variants results).
+commands: ['{py} -m ariadne.selftest {results}/B5a_broken_variants{smoke}/*correct*.pkl --out {out}/selftest.jsonl']

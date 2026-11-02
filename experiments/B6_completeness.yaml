@@ -1,0 +1,50 @@
+name: B6_completeness
+doc: |
+  Question. How many re-thinks are forced by the index rather than by the data?  With exact reads and exact validation, a rejected
+    validation always corresponds to a change of the true top-k; with an approximate index the answer can change although the exact
+    top-k did not (physical-only changes), and it can stay the same although it did.
+  Setup. Instrumented runs with index none (exact scan), HNSW at several search budgets, IVFFlat.
+  Report. first audit: changed_set_%, exact_topk_changed_%, physical_only_change_%; per policy redo_%.  Expect: physical-only
+    changes are 0 with exact search and small with HNSW; cadm absorbs most of them.
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  protocol: {kind: validate, policy: none}
+cases:
+- _name: L4
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 4}
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+grid:
+  store:
+  - _name: exact
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: none, M: 16, ef_construction: 64, ef_search: 40}
+  - _name: hnsw-ef10
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+    ef: 10
+  - _name: hnsw-ef40
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+    ef: 40
+  - _name: hnsw-ef200
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+    ef: 200
+  - _name: ivfflat-p5
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: ivfflat, M: 16, ef_construction: 64, ef_search: 40, lists: 200, probes: 5}
+  - _name: ivfflat-p20
+    store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: ivfflat, M: 16, ef_construction: 64, ef_search: 40, lists: 200, probes: 20}
+repeat: 3
+audits: [first, run]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+  cases:
+  - _name: A16
+    workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 4000, stream: 300, teams: single, agents: 16}
+  grid:
+    store:
+    - _name: exact
+      store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: none, M: 16, ef_construction: 64, ef_search: 40}
+    - _name: hnsw-ef10
+      store: {kind: pgvector, dsn: '${PG_DSN:-dbname=root}', index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+      ef: 10

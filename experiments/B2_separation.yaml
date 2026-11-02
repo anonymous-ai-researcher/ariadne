@@ -1,0 +1,38 @@
+name: B2_separation
+doc: |
+  Question. The separation proposition: tau-deduplicating insertions under c-serializability keep the store (tau / c)-separated.  Does
+    the final store satisfy it, and is the bound tight?
+  Setup. (a) real streams and fan-out with cert:c for a range of c: the smallest pairwise distance among stored stream items must be at
+    least tau / c.  (b) tightness: a synthetic stream whose siblings are planted at distances around tau (radius 0.5, low sibling
+    dimension), so that pairs just below tau exist; the smallest stored distance should approach tau / c as c grows.
+    (c) approximate validation (cadm:c): the bound degrades to tau / (c * rho), report the observed minimum against it.
+  Report. sep audit: min_pairwise_distance, items_within_tau_of_another, items_within_tau_over_c, separation_proposition.violations (0 for
+    cert), redundant_items.
+base:
+  k: 10
+  tau_cos: 0.1
+  decider: {kind: threshold, think: 'lognormal:0.2,0.3'}
+  store: {kind: faissmem, index: hnsw, M: 16, ef_construction: 64, ef_search: 40}
+  protocol: {kind: validate}
+cases:
+- _name: A64
+  workload: {kind: stream, data: 'data/agnews__${EMB:-wordllama}.npz', base: 60000, stream: 6000, teams: single, agents: 64}
+- _name: L8
+  workload: {kind: stream, data: 'data/locomo__${EMB:-wordllama}.npz', teams: group, agents: 8}
+- _name: fan
+  tau_cos: 0.15
+  workload: {kind: fanout, data: data/spacy__raw.npz, n_base: 10000, n_events: 600, conc: 16, think: 0.2, jitter: 1.0}
+- _name: tight
+  workload: {kind: synthetic, dim: 32, D: 12, n_base: 30000, n_stream: 20000, pi: 0.6, Ds: 2, radius: 0.5, lag_p: 0.3, agents: 64}
+grid:
+  protocol.policy: ['cert:1.0', 'cert:1.05', 'cert:1.1', 'cert:1.2', 'cert:1.5', 'cert:2.0', 'cadm:1.1', 'cadm:1.5', none]
+repeat: 3
+audits: [sep, run]
+smoke:
+  base:
+    decider: {kind: threshold, think: 'lognormal:0.02,0.3'}
+  cases:
+  - _name: tight
+    workload: {kind: synthetic, dim: 32, D: 12, n_base: 4000, n_stream: 1500, pi: 0.6, Ds: 2, radius: 0.5, lag_p: 0.3, agents: 32}
+  grid:
+    protocol.policy: ['cert:1.0', 'cert:1.2', 'cert:2.0', none]
