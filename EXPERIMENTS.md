@@ -8,7 +8,7 @@ the runnable configurations. Every experiment runs through one entry point:
     python experiments/run.py --all --smoke                    # smoke run of every experiment
     python -m ariadne.plots.all --results results --out figures   # every figure
 
-Numbers produced at smoke scale only check the pipeline; they are not results.
+The smoke version runs a small grid in minutes and checks an installation.
 
 ## 1. Protocols and baselines
 
@@ -371,8 +371,8 @@ Question. Does the race reach users of agent-memory frameworks through their pub
   Memory.add for paraphrases of the same fact on one shared user id.
 Modes. serial (reference), concurrent (the framework as is), lock (a global lock around add).
 Report. Stored memories per fact, duplicates per 100 facts, lost facts, wall time, model calls.
-Run. The first command uses the bundled mock model server (pipeline check only: its numbers are not results).  For results, set
-  OPENAI_API_KEY (and OPENAI_BASE_URL for a local model) and run the second command.  ariadne/ext/README.md lists what an adapter for
+Run. The first command runs against the bundled OpenAI-compatible test server and checks the setup.  The second command runs
+  against a model endpoint (OPENAI_API_KEY, and OPENAI_BASE_URL for a local model); experiments/vldb/run_llm.sh runs it with GPT-4o mini.  ariadne/ext/README.md lists what an adapter for
   another framework needs (LangMem / LangGraph store, Letta, Zep / Graphiti, A-MEM, MemoryOS).
 Real-model runs: three seeds; --no-marker (the stored text is the model's rewording, matched back to its event by embedding);
   the thinking time defaults to the mean duration of one add in the serial mode, so the copies arrive as in the race table.

@@ -12,7 +12,9 @@ second reader see the first row, so at most one may commit.
 
 Positive result: for GiST equality and range searches whose point X lies OUTSIDE
 all existing bounding boxes, both transactions commit (missed conflict). The
-B-tree control and GiST/SP-GiST kNN do not.
+B-tree control and GiST/SP-GiST kNN do not. On PostgreSQL 16.15 the paper reports
+40 of 40 both-commit trials for GiST equality and range outside the data, 2 of 40
+inside the populated region, and 0 for kNN ordering and for B-tree.
 
 Cells: btree equality (control), gist equality, gist range (circle), gist kNN,
 spgist equality, spgist kNN; each in two regions (outside all data, inside the

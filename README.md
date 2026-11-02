@@ -31,9 +31,15 @@
 Agents that share a vector store as memory record an observation with a short transaction: an approximate
 similarity search, a model call that takes seconds, and a write. Two agents can read the same neighborhood a
 second apart, both decide that an observation is new, and store it twice. No isolation level says what such a
-read may return while other agents write, and the existing options either let the race through (the default of
-vector stores), lock far too much and still miss conflicts (serializable PostgreSQL with pgvector), or repeat the
-model call whenever a re-read at commit differs at all (re-execution validation).
+read may return while other agents write, and the existing options fall short:
+
+- **No protection.** Seven vector stores keep 86 to 89 duplicate memories per 100 new facts, and Mem0 keeps 78.8,
+  against 0.0 when the calls run one at a time. Snapshot isolation changes nothing.
+- **Serializable PostgreSQL with pgvector.** Every similarity read locks the entire index; at 16 concurrent tasks
+  a transaction aborts 58 times on average, and a gap in conflict detection still lets duplicates commit
+  (9.4% of tightly timed pairs).
+- **Re-execution validation.** Repeating the read at commit removes the race, but the answer changes during the
+  thinking time for 6% to 55% of the tasks, and each change costs another model call.
 
 Ariadne starts from the observation that an approximate read never promised the exact answer, so isolation need
 not protect it either. The paper makes this precise and builds a system on it:
@@ -66,6 +72,25 @@ otherwise it thinks again on the fresh answer, with no extra read, and aborts af
 validation read (the *certified* variant) every execution is c-serializable; with an index read the guarantee
 composes multiplicatively with the index's own approximation ratio (Theorem 4.3 of the paper).
 
+## Results at a glance
+
+Evaluated on five text streams, seven stores and 20 baselines from five families (Section 6 of the paper):
+
+| | Result |
+|---|---|
+| **Token overhead of isolation** | from 18% to 42% under re-execution to 7% to 13% at c = 1.1, with two LLMs (GPT-4o mini and Qwen2.5-7B-Instruct) |
+| **Model calls** | re-execution spends 7 to 51 extra calls per 100 tasks on LoCoMo and AG News; c = 1.05, 1.1 and 1.2 save 38% to 65%, 47% to 82% and 64% to 93% of them |
+| **Duplicates** | only six beyond re-execution in 130,869 replayed tasks, all on one data set |
+| **Answer quality** | LoCoMo answers within 0.05 F1 points of re-execution; without isolation, answers lose 1.6 F1 points |
+| **Identity-sensitive decisions** | at c = 1.1, up to 2.9 points for links to the nearest memory and 0.3 for the models' own decisions |
+| **Conflict law** | predicts conflict probabilities on LoCoMo and AG News within 2.0 to 4.1 points, against 18 to 46 when all writes count as background |
+| **Throughput** | at 64 agents, 274.4 tasks/s at c = 1.1 (87% of no isolation) and 244.1 under re-execution (77%), against 89.9 for serializable isolation with backoff |
+| **Pessimistic locking** | on A64, strict and tolerant ball locks spend 811.1 and 291.2 extra calls per 100 tasks on deadlock victims, against 102.2 and 12.7 for certified validation |
+| **PostgreSQL** | the duplicate commit under SERIALIZABLE is reproduced deterministically and closed by an eight-line patch to pgvector |
+
+The full version ([PDF](ariadne-full-version.pdf)) contains the proofs, the PostgreSQL analysis, the conflict law in
+detail and every further experiment.
+
 ## Repository layout
 
 ```text
@@ -86,7 +111,7 @@ ariadne/                    the framework
 ├── data.py                 data set loaders and embedders (prep, stats)
 ├── provenance.py           code and data fingerprints recorded with every result
 ├── pgtests/                PostgreSQL SERIALIZABLE probes (locks, hole, hammer, generic, gist, keyed, antipodal, patched)
-├── ext/                    the race through an agent-memory framework (Mem0) and an offline OpenAI-compatible mock
+├── ext/                    the race through an agent-memory framework (Mem0) and an OpenAI-compatible test server
 ├── plots/                  every figure and generated table of the paper
 └── tools/                  helpers to redraw single figures
 experiments/                60 experiment files (A1 to G3), the single runner and data preparation
@@ -191,7 +216,7 @@ exact           40           0          129            9    0.87
 cadm:1.1        40           0          126            6    0.83
 ```
 
-The numbers of this toy depend on timing and differ from run to run; the experiments below measure the effect.
+The counts depend on the thread schedule of the machine.
 
 **The commit test on its own.** A policy decides whether a held answer `A` may commit given the fresh answer `F`;
 answers are lists of `(item_id, distance)` sorted by distance:
@@ -302,13 +327,13 @@ python -m ariadne.selftest     results/B1_safety_theorem/<cell>.pkl    # plant f
 | Module | What it shows |
 |---|---|
 | `locks` | a serializable similarity read takes a relation-level SIREAD lock on the whole HNSW or IVFFlat index |
-| `antipodal` | two transactions whose queries are almost antipodal still abort each other (B-tree control commits both) |
+| `antipodal` | two transactions whose queries are almost antipodal still abort each other, because one read locks the whole index (B-tree control commits both) |
 | `hole` | with a debugger pause inside `hnswinsert`, two check-then-insert transactions both commit a duplicate |
-| `hammer` | the same window without a debugger, as a function of insertion time (`m`, `ef_construction`), with controls |
-| `generic` | the same window on SP-GiST and BRIN; B-tree as the negative control |
-| `gist` | GiST, which does take predicate locks, misses a conflict when an insertion only enlarges a bounding box |
+| `hammer` | the same window without a debugger: 9.4% of tightly timed pairs store both rows, up to 61.2% at a mean insertion time of 7.9 ms (`m`, `ef_construction`); advisory-lock and sequential-scan controls at zero |
+| `generic` | the same pause produces a double commit on SP-GiST and BRIN; on B-tree, hash and GIN one transaction aborts |
+| `gist` | GiST, which does take predicate locks, commits both rows in 40 of 40 trials for equality and range searches outside all data, when an insertion only enlarges a bounding box |
 | `keyed` | the same transaction on a scalar key with a B-tree, for comparison of abort rates |
-| `patched` | builds pgvector with `patches/pgvector_ssi_recheck.patch` and repeats the tests against it |
+| `patched` | builds pgvector with `patches/pgvector_ssi_recheck.patch` and repeats the tests against it: 0 of 30,000 pairs store both rows |
 
 The window exists because `index_insert()` checks for serializable conflicts before `hnswinsert()` links the new
 element. The patch repeats the check right after the element is linked:
@@ -342,8 +367,7 @@ from the result files through the key map in `paper/resmap/`; figures and genera
 ```bash
 python paper/assemble_results.py --vm <base results> --perf results_vldb_perf \
        --gpt results_vldb_gpt4omini --qwen results_vldb_qwen7b --out results_vldb_merged
-RESULTS=results_vldb_merged bash paper/build.sh            # draft: missing values print their shape
-FINAL=1 RESULTS=results_vldb_merged bash paper/build.sh    # final: anything missing is a compile error
+FINAL=1 RESULTS=results_vldb_merged bash paper/build.sh
 ```
 
 `paper/build.sh` writes `paper/pvldb20-ariadne.pdf` (main text) and `paper/pvldb20-ariadne-full.pdf` (full version

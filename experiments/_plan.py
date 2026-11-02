@@ -127,7 +127,7 @@ the runnable configurations. Every experiment runs through one entry point:
     python experiments/run.py --all --smoke                    # smoke run of every experiment
     python -m ariadne.plots.all --results results --out figures   # every figure
 
-Numbers produced at smoke scale only check the pipeline; they are not results.
+The smoke version runs a small grid in minutes and checks an installation.
 
 ## 1. Protocols and baselines
 

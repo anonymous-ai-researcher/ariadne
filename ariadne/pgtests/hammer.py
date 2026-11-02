@@ -22,7 +22,8 @@ index, so the duplicates are missed conflicts and not recall errors.
 
 Positive result: --mode plain reports a nonzero duplicate rate that grows with
 m/ef_construction, while --mode advisory, --index none and the recheck patch
-(ariadne.pgtests.patched) report 0.
+(ariadne.pgtests.patched) report 0. On PostgreSQL 16.15 / pgvector 0.8.7 the paper reports 9.4% of tightly
+timed pairs, up to 61.2% at a mean insertion time of 7.9 ms, and 0 of 30,000 pairs with the patch.
 
 Invocation:
     python -m ariadne.pgtests.hammer --pairs 600 --out results/T_pg/hammer.jsonl

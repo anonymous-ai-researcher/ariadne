@@ -18,14 +18,11 @@ are not measured (software versions, machines, model names, counts). Figures and
 ```bash
 python paper/assemble_results.py --vm <base results> --perf results_vldb_perf \
        --gpt results_vldb_gpt4omini --qwen results_vldb_qwen7b --out results_vldb_merged
-RESULTS=results_vldb_merged bash paper/build.sh            # draft
-FINAL=1 RESULTS=results_vldb_merged bash paper/build.sh    # final: a missing value, figure or table is an error
+FINAL=1 RESULTS=results_vldb_merged bash paper/build.sh
 
 python paper/make_results.py --list                        # every key with its shape
 python paper/make_results.py --context C1.A64              # where keys with this prefix occur in the text
-python paper/make_results.py --selftest                    # exercise every selector of the map on smoke results
 ```
 
-In a draft build a value without data prints its shape in orange and a missing figure prints a frame, so the
-PDF can be read at any stage. The full version references the main text through `xr`, so the main text is
+The full version references the main text through `xr`, so the main text is
 compiled first. Building needs a TeX Live installation with `pdflatex` and `bibtex`.
